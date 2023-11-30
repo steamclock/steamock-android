@@ -1,20 +1,12 @@
-package com.steamclock.steamock.lib.mocks
+package com.steamclock.steamock.lib
 
 import android.util.Log
-import com.steamclock.steamock.lib.mocks.ui.ContentLoadViewState
+import com.steamclock.steamock.lib.api.Postman
+import com.steamclock.steamock.lib.api.PostmanAPIClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.json.Json
 
 typealias ApiName = String // Note this user defined in Postman and may not be related to the actual URL path
-
-data class PostmanMockConfig(
-    val postmanAccessKey: String,
-    val mockCollectionId: String,
-    val mockServerUrl: String,
-    val json: Json,
-    val logCalls: Boolean
-)
 
 sealed class MockResponse {
     class NoneAvailable(val hadError: Exception?): MockResponse()
@@ -56,11 +48,14 @@ class PostmanMockRepo(
     //==================================================================
     // Public methods, setting up mocks
     //==================================================================
-    suspend fun syncEnabledMocks() {
-        // todo sync with datastore? Use dataStore directly?
-        // For now start off empty
-        mutableEnabledMocks.emit(hashMapOf())
-    }
+//    suspend fun syncEnabledMocks() {
+//        // todo sync with datastore? Use dataStore directly?
+//        // In the future we could download mocks for offline usage
+//        // For now start off empty
+//
+//        //
+//        mutableEnabledMocks.emit(hashMapOf())
+//    }
 
     suspend fun requestCollectionUpdate() {
         queryMockCollection(config.mockCollectionId)
@@ -71,7 +66,15 @@ class PostmanMockRepo(
      */
     suspend fun queryMockCollection(collectionId: String) {
         mutableMockCollectionState.emit(ContentLoadViewState.Loading)
-//s
+
+        try {
+            val response = postmanClient.getCollection(collectionId).collection
+            mutableMockCollection.emit(response)
+            mutableMockGroups.emit(findMockingGroups(response))
+            mutableMockCollectionState.emit(ContentLoadViewState.Success)
+        } catch (e: Exception) {
+            mutableMockCollectionState.emit(ContentLoadViewState.Error(e))
+        }
     }
 
     private fun flattenedItems(objects: List<Postman.Item>?): List<Postman.Item> {

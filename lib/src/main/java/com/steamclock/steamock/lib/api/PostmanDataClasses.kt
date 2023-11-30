@@ -1,4 +1,4 @@
-package com.steamclock.steamock.lib.mocks
+package com.steamclock.steamock.lib.api
 
 import kotlinx.serialization.Serializable
 

@@ -1,4 +1,4 @@
-package com.steamclock.steamock.lib.mocks.ui
+package com.steamclock.steamock.lib
 
 sealed class ContentLoadViewState {
     object Loading: ContentLoadViewState()

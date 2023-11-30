@@ -1,5 +1,6 @@
-package com.steamclock.steamock.lib.data
-import com.steamclock.steamock.lib.mocks.PostmanMockConfig
+package com.steamclock.steamock
+import com.steamclock.steamock.lib.PostmanMockConfig
+import com.steamclock.steamock.lib.appJson
 
 sealed class PostmanMockEnv(val postmanMockConfig: PostmanMockConfig, val appApiStartingUrl: String) {
 

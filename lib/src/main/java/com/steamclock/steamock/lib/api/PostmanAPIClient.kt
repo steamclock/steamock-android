@@ -1,6 +1,7 @@
-package com.steamclock.steamock.lib.mocks
+package com.steamclock.steamock.lib.api
 
 import android.util.Log
+import com.steamclock.steamock.lib.PostmanMockConfig
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.*
@@ -25,7 +26,6 @@ class PostmanAPIClient(
     private val postmanAPICollectionPath = "collections"
 
     private val internalClient = HttpClient(CIO) {
-
         install(ContentNegotiation) {
            json(config.json)
         }

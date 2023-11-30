@@ -1,4 +1,4 @@
-package com.steamclock.steamock.lib.mocks
+package com.steamclock.steamock.lib
 
 enum class MockState {
     ENABLED, /* Mocking enabled */
