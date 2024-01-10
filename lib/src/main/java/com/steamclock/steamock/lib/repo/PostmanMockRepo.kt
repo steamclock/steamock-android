@@ -1,17 +1,14 @@
-package com.steamclock.steamock.lib
+package com.steamclock.steamock.lib.repo
 
 import android.util.Log
+import com.steamclock.steamock.lib.ui.ContentLoadViewState
+import com.steamclock.steamock.lib.PostmanMockConfig
 import com.steamclock.steamock.lib.api.Postman
 import com.steamclock.steamock.lib.api.PostmanAPIClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 typealias ApiName = String // Note this user defined in Postman and may not be related to the actual URL path
-
-sealed class MockResponse {
-    class NoneAvailable(val hadError: Exception?): MockResponse()
-    class HasMockUrl(val mockUrl: String): MockResponse()
-}
 
 class PostmanMockRepo(
     private val config: PostmanMockConfig

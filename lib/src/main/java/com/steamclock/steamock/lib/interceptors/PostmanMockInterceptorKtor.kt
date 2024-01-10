@@ -1,7 +1,7 @@
 import android.util.Log
-import com.steamclock.steamock.lib.MockResponse
-import com.steamclock.steamock.lib.MockState
-import com.steamclock.steamock.lib.PostmanMockRepo
+import com.steamclock.steamock.lib.repo.MockResponse
+import com.steamclock.steamock.lib.repo.MockState
+import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpClientPlugin
 import io.ktor.client.request.HttpRequestPipeline

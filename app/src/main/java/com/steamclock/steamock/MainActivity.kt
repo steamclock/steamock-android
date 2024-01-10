@@ -3,7 +3,6 @@ package com.steamclock.steamock
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,12 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.steamclock.steamock.lib.PostmanMockConfig
-import com.steamclock.steamock.lib.PostmanMockRepo
-import com.steamclock.steamock.lib.appJson
+import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
-import com.steamclock.steamock.lib.ContentLoadViewState
+import com.steamclock.steamock.lib.ui.ContentLoadViewState
 import com.steamclock.steamock.lib.ui.AvailableMocks
 
 class MainActivity : ComponentActivity() {

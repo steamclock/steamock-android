@@ -4,8 +4,8 @@ import PostmanMockInterceptorKtor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.steamclock.steamock.lib.PostmanMockRepo
-import com.steamclock.steamock.lib.api.KoinLocalConsoleLogger
+import com.steamclock.steamock.lib.repo.PostmanMockRepo
+import com.steamclock.steamock.lib.api.LocalConsoleLogger
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.*
@@ -46,7 +46,7 @@ class AppApiClient(
 
         if (logCalls) {
             install(Logging) {
-                logger = KoinLocalConsoleLogger()
+                logger = LocalConsoleLogger()
                 level = LogLevel.ALL
             }
         }

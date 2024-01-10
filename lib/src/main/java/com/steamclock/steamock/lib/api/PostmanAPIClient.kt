@@ -16,27 +16,29 @@ import io.ktor.serialization.kotlinx.json.*
 /**
  * PostmanAPIClient wraps up the Postman API calls which allow us to get collection (and
  * eventually mocking) data
- *
- * https://ktor.io/docs/migrating-2.html#feature-plugin-client
  */
 class PostmanAPIClient(
     private val config: PostmanMockConfig
 ) {
-    private val postmanAPIBaseUrl = "https://api.getpostman.com"
-    private val postmanAPICollectionPath = "collections"
-
+    /**
+     * Using raw HttpClient to make Postman API calls, instead of going indirectly through a
+     * networking library like Retrofit.
+     */
     private val internalClient = HttpClient(CIO) {
+        // Use JSON serialization to parse our Postman API responses
         install(ContentNegotiation) {
            json(config.json)
         }
 
+        // Log postman API calls to console if enabled
         if (config.logCalls) {
             install(Logging) {
-                logger = KoinLocalConsoleLogger()
+                logger = LocalConsoleLogger()
                 level = LogLevel.ALL
             }
         }
 
+        // Add postman API key to all postman API calls
         defaultRequest {
             headers {
                 append("X-API-Key", config.postmanAccessKey)
@@ -44,9 +46,12 @@ class PostmanAPIClient(
         }
     }
 
-    /**
-     * Requests data via HttpClient directly; could setup interface?
-     */
+    //=====================================================================
+    // Postman API calls
+    //=====================================================================
+    private val postmanAPIBaseUrl = "https://api.getpostman.com"
+    private val postmanAPICollectionPath = "collections"
+
     suspend fun getCollection(collectionId: String): Postman.CollectionResponse {
         val collectionUrl = "$postmanAPIBaseUrl/$postmanAPICollectionPath/$collectionId"
         val response = internalClient.get(collectionUrl) {}
@@ -54,7 +59,10 @@ class PostmanAPIClient(
     }
 }
 
-class KoinLocalConsoleLogger : Logger {
+/**
+ * Utility class to log to console
+ */
+class LocalConsoleLogger : Logger {
     override fun log(message: String) {
         Log.d("LocalConsoleLogger", message)
     }
