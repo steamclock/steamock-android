@@ -14,7 +14,12 @@ class ExampleApiRepo(
 
     suspend fun makeRequest(fullUrl: String) {
         mutableApiResponse.emit("Loading...")
-        mutableApiResponse.emit(client.makeRequest(fullUrl))
+        try {
+            mutableApiResponse.emit(client.makeRequest(fullUrl))
+        } catch (e: Exception) {
+            // If mocking enforced, but no mock is found, then our client will throw an exception
+            mutableApiResponse.emit(e.localizedMessage ?: "Unknown error")
+            return
+        }
     }
 }
-

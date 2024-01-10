@@ -3,18 +3,28 @@ package com.steamclock.steamock
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.steamclock.steamock.lib.PostmanMockConfig
@@ -25,7 +35,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
+import com.steamclock.steamock.lib.repo.MockState
 import com.steamclock.steamock.lib.ui.ContentLoadViewState
 import com.steamclock.steamock.lib.ui.AvailableMocks
 
@@ -41,7 +53,10 @@ class MainActivity : ComponentActivity() {
         json = appJson,
         logCalls = true
     )
-    private val postmanRepo = PostmanMockRepo(postmanConfig)
+    private val postmanRepo = PostmanMockRepo(postmanConfig).apply {
+        // Do not actually run HTTP requests if no mocks are enabled.
+        mockState = MockState.MOCKS_ONLY
+    }
     //=================================================================
 
     //=================================================================
@@ -59,14 +74,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+            val coroutineScope = rememberCoroutineScope()
             val mockCollectionState by postmanRepo.mockCollectionState.collectAsState()
             val exampleAPIResponse by exampleApiRepo.apiResponse.collectAsState()
             var exampleAPIUrl by remember { mutableStateOf(BuildConfig.exampleDefaultUrl) }
-            val coroutineScope = rememberCoroutineScope()
+            var showingStubs by remember { mutableStateOf(false) }
+            var showingExample by remember { mutableStateOf(false) }
 
             val stateText = when (val immutableState = mockCollectionState) {
                 is ContentLoadViewState.Error -> immutableState.throwable.localizedMessage
-                ContentLoadViewState.Loading -> "Loading"
+                ContentLoadViewState.Loading -> "Fetching available Postman mocks..."
                 else -> null
             }
 
@@ -75,59 +92,78 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colors.background
             ) {
-                LazyColumn() {
-                    // Loading state
-                    stateText?.let {
-                        item {
-                            Text(text = stateText)
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
+                LazyColumn {
+                    item {
+                        Text(
+                            text = "Welcome to the Android Postman mocking example! " +
+                                    "This app is meant to demonstrate how to use Postman to mock APIs in your Android app." +
+                                    "To get started, you will need to update the local properties for the sample app with your mocking environment setup.\n\n" +
+                                    "Once setup, you can view and enable all mocks in the \"Available Postman Mocks\" section below." +
+                                    "The \"Intercept Requests\" section can be used to test how calls are intercepted and mocks are returned.",
+                            modifier = Modifier.padding(16.dp)
+                        )
                     }
 
-                    // List all mocks in collection
-                    item {
-                        AvailableMocks(mockRepo = postmanRepo)
-                    }
-
-                    // Testing
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Column(modifier = Modifier
-                            .background(Color.LightGray)
-                            .padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Simulating normal API usage",
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Attempt request to:"
-                            )
-
-                            OutlinedTextField(
-                                value = exampleAPIUrl,
-                                onValueChange = { exampleAPIUrl = it }
-                            )
-
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        exampleApiRepo.makeRequest(exampleAPIUrl)
-                                    }
+                    when (mockCollectionState) {
+                        is ContentLoadViewState.Error,
+                        is ContentLoadViewState.Loading -> {
+                            stateText?.let {
+                                item {
+                                    Text(modifier = Modifier.padding(16.dp), text = stateText)
+                                    Spacer(modifier = Modifier.height(16.dp))
                                 }
-                            ) {
-                                Text(text = "Send Request")
+                            }
+                        }
+                        is ContentLoadViewState.Success -> {
+                            // List all mocks
+                            item {
+                                CollapsableContent(
+                                    title = "Available Postman Mocks",
+                                    isExpanded = showingStubs,
+                                    onRowClicked = { showingStubs = !showingStubs },
+                                    content = { AvailableMocks(mockRepo = postmanRepo) }
+                                )
                             }
 
-                            Text(
-                                text = exampleAPIResponse
-                            )
+                            // Setup intercept requests
+                            item {
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                CollapsableContent(
+                                    title = "Intercept Requests",
+                                    isExpanded = showingExample,
+                                    onRowClicked = { showingExample = !showingExample },
+                                    content = {
+                                        Column(
+                                            modifier = Modifier.padding(16.dp)
+                                        ) {
+                                            OutlinedTextField(
+                                                value = exampleAPIUrl,
+                                                onValueChange = { exampleAPIUrl = it }
+                                            )
+
+                                            Button(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        exampleApiRepo.makeRequest(exampleAPIUrl)
+                                                    }
+                                                }
+                                            ) {
+                                                Text(text = "Send Request")
+                                            }
+
+                                            Text(
+                                                text = exampleAPIResponse
+                                            )
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
+
                 }
             }
-
         }
 
         lifecycleScope.launch {
@@ -136,6 +172,42 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+private fun CollapsableContent(
+    title: String,
+    isExpanded : Boolean,
+    onRowClicked: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Divider()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onRowClicked() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            modifier = Modifier.weight(1f).padding(8.dp),
+            fontSize = 24.sp,
+            text = title,
+        )
+        Icon(
+            modifier = Modifier.wrapContentSize().padding(8.dp),
+            imageVector =  if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = null
+        )
+    }
+    Divider()
+
+    AnimatedVisibility(
+        visible = isExpanded,
+        enter = fadeIn(animationSpec = tween(200)),
+        exit = fadeOut(animationSpec = tween(200))
+    ) {
+        content()
+    }
+}
 
 @Composable
 fun Greeting(name: String) {

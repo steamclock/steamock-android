@@ -23,12 +23,14 @@ class PostmanMockInterceptorKtor(
     override fun prepare(block: Unit.() -> Unit): PostmanMockInterceptorKtor = this
 
     override fun install(feature: PostmanMockInterceptorKtor, scope: HttpClient) {
+
         scope.requestPipeline.intercept(HttpRequestPipeline.Before) {
             when (val mockResponse = postmanMockRepo.getMockForPath(context.url.encodedPath)) {
                 is MockResponse.NoneAvailable -> {
                     mockResponse.hadError?.let { /* todo Could do specific error handling here */ }
 
                     // Determine if we want to block the original request from continuing.
+                    // todo look into returning a 403/500 error instead of blocking the request.
                     when (postmanMockRepo.mockState) {
                         MockState.MOCKS_ONLY -> throw IllegalStateException("Mocking enforced, but no mock selected for ${context.url.buildString()}")
                         else -> proceedWith(it)

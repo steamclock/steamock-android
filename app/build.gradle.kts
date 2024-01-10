@@ -73,6 +73,7 @@ dependencies {
     //implementation("androidx.compose.material3:material3")
     // or Material Design 2
     implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material-icons-core:1.5.4")
     // or skip Material Design and build directly on top of foundational components
     //implementation("androidx.compose.foundation:foundation")
     // or only import the main APIs for the underlying toolkit systems,
