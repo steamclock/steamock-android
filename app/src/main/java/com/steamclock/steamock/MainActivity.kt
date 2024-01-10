@@ -22,16 +22,22 @@ import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import com.steamclock.steamock.lib.BuildConfig
 import com.steamclock.steamock.lib.ui.ContentLoadViewState
 import com.steamclock.steamock.lib.ui.AvailableMocks
 
 class MainActivity : ComponentActivity() {
 
     //private val viewModel: PostmanViewModel by viewModels()
+
+    /**
+     * Postman mocking details setup via local.properties and are stored in BuildConfig.
+     * In a production app, postmanConfig and repo could be created via dependency injection.
+     */
     private val postmanConfig = PostmanMockConfig(
         postmanAccessKey = BuildConfig.postmanAccessKey,
-        mockCollectionId = "8183416-9575ed23-56ff-48aa-b6e2-f6b920992f1d",
-        mockServerUrl = "https://7d081da6-0204-4452-aec6-3bafd98b933f.mock.pstmn.io",
+        mockCollectionId = BuildConfig.postmanMockCollectionId,
+        mockServerUrl = BuildConfig.postmanMockServerUrl,
         json = appJson,
         logCalls = true
     )

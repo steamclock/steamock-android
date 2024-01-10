@@ -8,11 +8,21 @@ android {
     namespace = "com.steamclock.steamock.lib"
     compileSdk = 34
 
+    // Postman mocking setup pulled from local.properties
+    val localProps = com.android.build.gradle.internal.cxx.configure.gradleLocalProperties(rootDir)
+    val postmanAccessKey: String = localProps.getProperty("postmanAccessKey")
+    val postmanMockCollectionId: String = localProps.getProperty("postmanCollectionId")
+    val postmanMockServerUrl: String = localProps.getProperty("postmanMockServerUrl")
+
     defaultConfig {
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        buildConfigField("String", "postmanAccessKey", postmanAccessKey)
+        buildConfigField("String", "postmanMockCollectionId", postmanMockCollectionId)
+        buildConfigField("String", "postmanMockServerUrl", postmanMockServerUrl)
     }
 
     buildTypes {
@@ -32,6 +42,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -97,7 +108,6 @@ dependencies {
 
     // Other libs
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-
     implementation("io.ktor:ktor-client-core:2.3.6")
     implementation("io.ktor:ktor-client-cio:2.3.6")
     implementation("io.ktor:ktor-client-logging:2.3.6")

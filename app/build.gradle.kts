@@ -9,8 +9,6 @@ android {
     namespace = "com.steamclock.steamock"
     compileSdk = 34
 
-    val postmanAccessKey: String = gradleLocalProperties(rootDir).getProperty("postmanAccessKey")
-
     defaultConfig {
         applicationId = "com.steamclock.steamock"
         minSdk = 24
@@ -18,8 +16,6 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "postmanAccessKey", postmanAccessKey)
     }
 
     buildTypes {
@@ -38,7 +34,6 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 
     composeOptions {
