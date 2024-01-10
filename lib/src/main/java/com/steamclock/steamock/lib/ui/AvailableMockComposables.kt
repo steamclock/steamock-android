@@ -28,13 +28,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.steamclock.steamock.lib.ApiName
-import com.steamclock.steamock.lib.PostmanMockRepo
+import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import com.steamclock.steamock.lib.api.Postman
+import com.steamclock.steamock.lib.repo.ApiName
 import kotlinx.coroutines.launch
 
 /**
- * Paired with a PostmanMockRepo; when
+ * Shows a list of all available mocks, given a PostmanMockRepo
  */
 @Composable
 fun AvailableMocks(

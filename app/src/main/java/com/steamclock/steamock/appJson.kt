@@ -1,4 +1,4 @@
-package com.steamclock.steamock.lib
+package com.steamclock.steamock
 
 import kotlinx.serialization.json.Json
 
