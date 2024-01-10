@@ -21,13 +21,12 @@ class PostmanAPIClient(
     private val config: PostmanMockConfig
 ) {
     /**
-     * Using raw HttpClient to make Postman API calls, instead of going indirectly through a
-     * networking library like Retrofit.
+     * Using Ktor to make Postman API calls
      */
     private val internalClient = HttpClient(CIO) {
         // Use JSON serialization to parse our Postman API responses
         install(ContentNegotiation) {
-           json(config.json)
+            json(config.json)
         }
 
         // Log postman API calls to console if enabled

@@ -10,9 +10,13 @@ import io.ktor.http.encodedPath
 import io.ktor.http.takeFrom
 import io.ktor.util.AttributeKey
 
+/**
+ * PostmanMockInterceptorKtor is a Ktor HttpClientPlugin which intercepts outgoing requests and checks to see if a mock is available
+ * and enabled for the request. If so, it replaces the request URL with the mocked URL.
+ */
 class PostmanMockInterceptorKtor(
     private val postmanMockRepo: PostmanMockRepo
-) : HttpClientPlugin<Unit, PostmanMockInterceptorKtor> { // No HttpClientFeature Config yet, using PostmanMockRepo
+) : HttpClientPlugin<Unit, PostmanMockInterceptorKtor> { // No HttpClientFeature Config, using PostmanMockRepo directly.
 
     override val key: AttributeKey<PostmanMockInterceptorKtor> = AttributeKey("MockingRequestInterceptor")
 

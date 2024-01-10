@@ -1,9 +1,6 @@
 package com.steamclock.steamock
 
 import PostmanMockInterceptorKtor
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import com.steamclock.steamock.lib.api.LocalConsoleLogger
 import io.ktor.client.*
@@ -18,30 +15,18 @@ import kotlinx.serialization.json.Json
 
 /**
  * Allows sample app to simulate calling the APIs we want to test mocks for.
- * In practice we shouldn't need this because our apps will be running requests via their
- * own repos/clients.
  */
-class AppApiClient(
+class ExampleApiClient(
     private val json: Json,
     private val mockingRepo: PostmanMockRepo,
-    initialRequestAPI: String,
     logCalls: Boolean = true
 ) {
-    // At the moment, it is not recommended to use reactive streams to define the state variable
-    // a for TextField (which is where we are showing this value). Use mutableStateOf with update
-    // method instead.
-    var spoofAPIUrl by mutableStateOf(initialRequestAPI)
-        private set
-    fun updateSpoofAPIUrl(newAPI: String) { spoofAPIUrl = newAPI }
-
+    /**
+     * Ktor client setup, in practice this would probably be done in a DI module.
+     */
     private val internalClient = HttpClient(CIO) {
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-                prettyPrint = true
-                encodeDefaults = true
-            })
+            json(json)
         }
 
         if (logCalls) {
@@ -54,10 +39,13 @@ class AppApiClient(
         install(PostmanMockInterceptorKtor(mockingRepo))
     }
 
-    suspend fun testingSpoofCall(): String {
-        val response = internalClient.get(spoofAPIUrl)
+    /**
+     * Super dumb wrapper that just fires off an API call directly and returns the response as a string.
+     * Allows us to test the mock interceptor.
+     */
+    suspend fun makeRequest(fullUrl: String): String {
+        val response = internalClient.get(fullUrl)
         return response.body()
     }
-
 }
 

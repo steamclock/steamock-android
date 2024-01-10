@@ -21,34 +21,48 @@ import com.steamclock.steamock.lib.PostmanMockConfig
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import com.steamclock.steamock.lib.BuildConfig
 import com.steamclock.steamock.lib.ui.ContentLoadViewState
 import com.steamclock.steamock.lib.ui.AvailableMocks
 
 class MainActivity : ComponentActivity() {
 
-    //private val viewModel: PostmanViewModel by viewModels()
-
-    /**
-     * Postman mocking details setup via local.properties and are stored in BuildConfig.
-     * In a production app, postmanConfig and repo could be created via dependency injection.
-     */
+    //=================================================================
+    //
+    //=================================================================
     private val postmanConfig = PostmanMockConfig(
-        postmanAccessKey = BuildConfig.postmanAccessKey,
-        mockCollectionId = BuildConfig.postmanMockCollectionId,
-        mockServerUrl = BuildConfig.postmanMockServerUrl,
+        postmanAccessKey = com.steamclock.steamock.lib.BuildConfig.postmanAccessKey,
+        mockCollectionId = com.steamclock.steamock.lib.BuildConfig.postmanMockCollectionId,
+        mockServerUrl = com.steamclock.steamock.lib.BuildConfig.postmanMockServerUrl,
         json = appJson,
         logCalls = true
     )
     private val postmanRepo = PostmanMockRepo(postmanConfig)
+    //=================================================================
+
+    //=================================================================
+    //
+    //=================================================================
+    private val exampleAPIClient = ExampleApiClient(
+        json = appJson,
+        mockingRepo = postmanRepo,
+        logCalls = true
+    )
+    private val exampleApiRepo = ExampleApiRepo(exampleAPIClient)
+    //=================================================================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             val mockCollectionState by postmanRepo.mockCollectionState.collectAsState()
-            //val mockedDataResponse by viewModel.apiResponse.collectAsState()
+            val exampleAPIResponse by exampleApiRepo.apiResponse.collectAsState()
+            var exampleAPIUrl by remember { mutableStateOf(BuildConfig.exampleDefaultUrl) }
+            val coroutineScope = rememberCoroutineScope()
 
             val stateText = when (val immutableState = mockCollectionState) {
                 is ContentLoadViewState.Error -> immutableState.throwable.localizedMessage
@@ -91,22 +105,24 @@ class MainActivity : ComponentActivity() {
                                 text = "Attempt request to:"
                             )
 
-//                            OutlinedTextField(
-//                                value = viewModel.appApiService.spoofAPIUrl,
-//                                onValueChange = {
-//                                    viewModel.appApiService.updateSpoofAPIUrl(it)
-//                                }
-//                            )
+                            OutlinedTextField(
+                                value = exampleAPIUrl,
+                                onValueChange = { exampleAPIUrl = it }
+                            )
 
-//                            Button(
-//                                onClick = { viewModel.runFakeAPI() }
-//                            ) {
-//                                Text(text = "Send Request")
-//                            }
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        exampleApiRepo.makeRequest(exampleAPIUrl)
+                                    }
+                                }
+                            ) {
+                                Text(text = "Send Request")
+                            }
 
-//                            Text(
-//                                text = mockedDataResponse
-//                            )
+                            Text(
+                                text = exampleAPIResponse
+                            )
                         }
                     }
                 }

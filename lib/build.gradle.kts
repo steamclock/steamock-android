@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
@@ -9,7 +11,7 @@ android {
     compileSdk = 34
 
     // Postman mocking setup pulled from local.properties
-    val localProps = com.android.build.gradle.internal.cxx.configure.gradleLocalProperties(rootDir)
+    val localProps = gradleLocalProperties(rootDir)
     val postmanAccessKey: String = localProps.getProperty("postmanAccessKey")
     val postmanMockCollectionId: String = localProps.getProperty("postmanCollectionId")
     val postmanMockServerUrl: String = localProps.getProperty("postmanMockServerUrl")
