@@ -44,7 +44,8 @@ import com.steamclock.steamock.lib.ui.AvailableMocks
 class MainActivity : ComponentActivity() {
 
     //=================================================================
-    //
+    // Postman mocking setup; in an actually app this would most likely
+    // be setup via dependency injection.
     //=================================================================
     private val postmanConfig = PostmanMockConfig(
         postmanAccessKey = com.steamclock.steamock.lib.BuildConfig.postmanAccessKey,
@@ -60,7 +61,13 @@ class MainActivity : ComponentActivity() {
     //=================================================================
 
     //=================================================================
+    // Simulating a repository that would exist in an actual application.
+    // This example is using Ktor to make HTTP requests and will use a
+    // PostmanMockInterceptorKtor, along with our PostmanMockRepo to provide
+    // mocks to the application.
     //
+    // Again this would most likely be setup via dependency injection, and
+    // is only setup here for simplicity of the example.
     //=================================================================
     private val exampleAPIClient = ExampleApiClient(
         json = appJson,
