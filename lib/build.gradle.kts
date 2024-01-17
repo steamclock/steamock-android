@@ -27,18 +27,6 @@ android {
         buildConfigField("String", "postmanMockServerUrl", postmanMockServerUrl)
     }
 
-    flavorDimensions("networkingLibrary")
-    productFlavors {
-        create("retrofit") {
-            dimension = "networkingLibrary"
-            // Configuration specific to the demo flavor
-        }
-        create("ktor") {
-            dimension = "networkingLibrary"
-            // Configuration specific to the full flavor
-        }
-    }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -124,15 +112,10 @@ dependencies {
 
     // Networking (ktor)
     // https://ktor.io/docs/migrating-2.html#testing-api
-    "ktorImplementation"("io.ktor:ktor-client-core:2.3.6")
-    "ktorImplementation"("io.ktor:ktor-client-cio:2.3.6")
-    "ktorImplementation"("io.ktor:ktor-client-logging:2.3.6")
-    "ktorImplementation"("io.ktor:ktor-client-auth:2.3.6")
-    "ktorImplementation"("io.ktor:ktor-client-content-negotiation:2.3.6")
-    "ktorImplementation"("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
-
-    // Networking (retrofit)
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    //implementation "com.squareup.okhttp3:logging-interceptor:$okhttpLogging"
+    implementation("io.ktor:ktor-client-core:2.3.6")
+    implementation("io.ktor:ktor-client-cio:2.3.6")
+    implementation("io.ktor:ktor-client-logging:2.3.6")
+    implementation("io.ktor:ktor-client-auth:2.3.6")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.6")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
 }

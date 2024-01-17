@@ -1,3 +1,5 @@
+package com.steamclock.steamock.lib_retrofit
+
 import android.util.Log
 import com.steamclock.steamock.lib.repo.MockResponse
 import com.steamclock.steamock.lib.repo.MockState

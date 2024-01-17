@@ -1,8 +1,8 @@
 package com.steamclock.steamock
 
-import PostmanMockInterceptorKtor
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import com.steamclock.steamock.lib.api.LocalConsoleLogger
+import com.steamclock.steamock.lib_ktor.PostmanMockInterceptorKtor
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.*
