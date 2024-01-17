@@ -36,6 +36,8 @@ class ExampleApiClient(
             }
         }
 
+        // Install our mock interceptor - This is the important, as these interceptors are what will
+        // automatically return mock data if enabled and setup.
         install(PostmanMockInterceptorKtor(mockingRepo))
     }
 

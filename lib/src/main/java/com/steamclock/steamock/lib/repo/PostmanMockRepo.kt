@@ -127,8 +127,10 @@ class PostmanMockRepo(
         try {
             val response = postmanClient.getCollection(collectionId).collection
             mutableMockCollection.emit(response)
+
             // Determine available groups from response
             mutableMockGroups.emit(findMockingGroups(response))
+
             // Indicate mocks are ready to be used
             mutableMockCollectionState.emit(ContentLoadViewState.Success)
         } catch (e: Exception) {

@@ -200,9 +200,6 @@ private fun PostmanItem(
     }
 }
 
-/**
- * Split out from Repo for ease of writing Previews
- */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AvailableMocks(
@@ -236,65 +233,24 @@ private fun AvailableMocks(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // todo left off scroll up and down aren't working?
+
         //---------------------------------------------------------------
         // Global actions
         //---------------------------------------------------------------
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
-            TextField(
-                modifier = Modifier.weight(1f),
-                value = delay.toString(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done,
-                    keyboardType = KeyboardType.Number
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        onUpdateMockDelayMs(delay)
-                        //keyboardController?.hide()
-                        focusManager.clearFocus()
-                    }
-                ),
-                onValueChange = {
-                    val result = it.replaceFirst("^0+(?!$)", "")
-                    delay = if (result.isBlank()) { 0 } else { result.toInt() }
-                },
-                label = {
-                    Text("Delay in ms")
-                }
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            ) {
-                GroupDropDownMenu(
-                    groupNames = availableGroups,
-                    selectedName = selectedGroupName,
-                    onSelected = { onMockGroupSelected.invoke(it) }
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                onClick = onAllMocksCleared
-            ) {
-                Text(
-                    text = "Clear all"
-                )
-            }
-        }
+        GlobalActions(
+            delay = delay,
+            onDelayUpdated = { delay = it },
+            onDelayDone = {
+                onUpdateMockDelayMs(delay)
+                //keyboardController?.hide()
+                focusManager.clearFocus()
+            },
+            availableGroups = availableGroups,
+            selectedGroupName = selectedGroupName,
+            onGroupSelected = { onMockGroupSelected.invoke(it) },
+            onAllMocksCleared = onAllMocksCleared
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
         Divider()
@@ -318,36 +274,124 @@ private fun AvailableMocks(
 }
 
 @Composable
+private fun GlobalActions(
+    delay: Int,
+    onDelayUpdated: (Int) -> Unit,
+    onDelayDone: () -> Unit,
+    availableGroups: Set<String>,
+    selectedGroupName: String?,
+    onGroupSelected: (String?) -> Unit,
+    onAllMocksCleared: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+    ) {
+        TextField(
+            modifier = Modifier.weight(1f),
+            value = delay.toString(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done,
+                keyboardType = KeyboardType.Number
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    onDelayDone()
+                }
+            ),
+            onValueChange = {
+                val result = it.replaceFirst("^0+(?!$)", "")
+                val delay = if (result.isBlank()) { 0 } else { result.toInt() }
+                onDelayUpdated(delay)
+            },
+            label = {
+                Text("Delay (in ms)")
+            },
+            colors = TextFieldDefaults.textFieldColors(
+                backgroundColor = MockingColors.inputBackground
+            )
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Only show group dropdown selector if there are groups available.
+        if (availableGroups.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+            ) {
+                GroupDropDownMenu(
+                    groupNames = availableGroups,
+                    selectedName = selectedGroupName,
+                    onSelected = { onGroupSelected(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        Button(
+            modifier = Modifier
+                .wrapContentWidth()
+                .fillMaxHeight(),
+            onClick = onAllMocksCleared
+        ) {
+            Text(
+                text = "Clear"
+            )
+        }
+    }
+}
+
+@Composable
 fun GroupDropDownMenu(
     groupNames: Set<String>,
     selectedName: String?,
     onSelected: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(onClick = { expanded = true })
-            .background(Color.LightGray),
+            .clickable(onClick = { isExpanded = true })
+            .background(MockingColors.inputBackground),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "Select Group",
-            modifier = Modifier.wrapContentSize()
-        )
+        Row(
+            Modifier.padding(horizontal = 8.dp)
+        ) {
+            Text(
+                text = "Select Group",
+                modifier = Modifier.wrapContentSize()
+            )
+
+            Icon(
+                imageVector = if (isExpanded) {
+                    Icons.Default.KeyboardArrowUp
+                } else {
+                    Icons.Default.KeyboardArrowDown
+                },
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .size(24.dp)
+            )
+        }
 
         DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
+            expanded = isExpanded,
+            onDismissRequest = { isExpanded = false },
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.LightGray)
+                .background(MockingColors.inputBackground)
         ) {
             groupNames.forEachIndexed { index, name ->
                 DropdownMenuItem(onClick = {
                     onSelected.invoke(name)
-                    expanded = false
+                    isExpanded = false
                 }) {
                     Text(text = name)
                 }
@@ -387,6 +431,24 @@ fun AvailableMock(
         }
     }
 }
+
+
+@Composable
+@Preview(widthDp = 400, showBackground = true, backgroundColor = 0xFFFFFFFF)
+fun GlobalActionsPreview() {
+    MaterialTheme {
+        GlobalActions(
+            delay = 1000,
+            onDelayUpdated = {},
+            onDelayDone = {},
+            availableGroups = setOf("Group 1", "Group 2"),
+            selectedGroupName = "Group 1",
+            onGroupSelected = {},
+            onAllMocksCleared = {}
+        )
+    }
+}
+
 
 @Composable
 @Preview(widthDp = 200)

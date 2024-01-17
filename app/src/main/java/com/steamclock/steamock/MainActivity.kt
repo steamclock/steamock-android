@@ -7,7 +7,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,7 +54,7 @@ class MainActivity : ComponentActivity() {
         logCalls = true
     )
     private val postmanRepo = PostmanMockRepo(postmanConfig).apply {
-        // Do not actually run HTTP requests if no mocks are enabled.
+        // Do not run HTTP requests if no mocks are enabled.
         mockState = MockState.MOCKS_ONLY
     }
     //=================================================================
@@ -85,6 +84,8 @@ class MainActivity : ComponentActivity() {
             val mockCollectionState by postmanRepo.mockCollectionState.collectAsState()
             val exampleAPIResponse by exampleApiRepo.apiResponse.collectAsState()
             var exampleAPIUrl by remember { mutableStateOf(BuildConfig.exampleDefaultUrl) }
+
+            var openAlertDialog by remember { mutableStateOf(true) }
             var showingStubs by remember { mutableStateOf(false) }
             var showingExample by remember { mutableStateOf(false) }
 
@@ -100,17 +101,6 @@ class MainActivity : ComponentActivity() {
                 color = MaterialTheme.colors.background
             ) {
                 LazyColumn {
-                    item {
-                        Text(
-                            text = "Welcome to the Android Postman mocking example! " +
-                                    "This app is meant to demonstrate how to use Postman to mock APIs in your Android app." +
-                                    "To get started, you will need to update the local properties for the sample app with your mocking environment setup.\n\n" +
-                                    "Once setup, you can view and enable all mocks in the \"Available Postman Mocks\" section below." +
-                                    "The \"Intercept Requests\" section can be used to test how calls are intercepted and mocks are returned.",
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-
                     when (mockCollectionState) {
                         is ContentLoadViewState.Error,
                         is ContentLoadViewState.Loading -> {
@@ -170,6 +160,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                 }
+
+                if (openAlertDialog) {
+                    WelcomeDialog { openAlertDialog = false }
+                }
             }
         }
 
@@ -177,6 +171,34 @@ class MainActivity : ComponentActivity() {
             postmanRepo.requestCollectionUpdate()
         }
     }
+}
+
+@Composable
+private fun WelcomeDialog(
+    onDismissRequest: () -> Unit
+) {
+    AlertDialog(
+        title = {
+            Text(text = "Postman Mocking Sample")
+        },
+        text = {
+            Text(
+                text = "This app is meant to demonstrate how to use Postman to mock APIs in your Android app." +
+                        "To get started, you will need to update the local properties for the sample app with your mocking environment setup.\n\n" +
+                        "Once setup, you can view and enable all mocks in the \"Available Postman Mocks\" section below." +
+                        "The \"Intercept Requests\" section can be used to test how calls are intercepted and mocks are returned.",
+                modifier = Modifier.padding(16.dp)
+            )
+        },
+        onDismissRequest = { onDismissRequest() },
+        confirmButton = {
+            TextButton(
+                onClick = { onDismissRequest() }
+            ) {
+                Text("Ok")
+            }
+        }
+    )
 }
 
 @Composable
@@ -214,9 +236,4 @@ private fun CollapsableContent(
     ) {
         content()
     }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
 }

@@ -27,6 +27,18 @@ android {
         buildConfigField("String", "postmanMockServerUrl", postmanMockServerUrl)
     }
 
+    flavorDimensions("networkingLibrary")
+    productFlavors {
+        create("retrofit") {
+            dimension = "networkingLibrary"
+            // Configuration specific to the demo flavor
+        }
+        create("ktor") {
+            dimension = "networkingLibrary"
+            // Configuration specific to the full flavor
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -101,23 +113,26 @@ dependencies {
     // Optional - Integration with activities
     implementation("androidx.activity:activity-compose:1.8.1")
     // Optional - Integration with ViewModels
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    //implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     // Optional - Integration with LiveData
-    implementation("androidx.compose.runtime:runtime-livedata")
+    //implementation("androidx.compose.runtime:runtime-livedata")
     // Optional - Integration with RxJava
-    implementation("androidx.compose.runtime:runtime-rxjava2")
+    //implementation("androidx.compose.runtime:runtime-rxjava2")
 
-
-    // Other libs
+    // Data serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    implementation("io.ktor:ktor-client-core:2.3.6")
-    implementation("io.ktor:ktor-client-cio:2.3.6")
-    implementation("io.ktor:ktor-client-logging:2.3.6")
-    implementation("io.ktor:ktor-client-auth:2.3.6")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.6")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
 
+    // Networking (ktor)
+    // https://ktor.io/docs/migrating-2.html#testing-api
+    "ktorImplementation"("io.ktor:ktor-client-core:2.3.6")
+    "ktorImplementation"("io.ktor:ktor-client-cio:2.3.6")
+    "ktorImplementation"("io.ktor:ktor-client-logging:2.3.6")
+    "ktorImplementation"("io.ktor:ktor-client-auth:2.3.6")
+    "ktorImplementation"("io.ktor:ktor-client-content-negotiation:2.3.6")
+    "ktorImplementation"("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
 
-//    https://ktor.io/docs/migrating-2.html#testing-api
-
+    // Networking (retrofit)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    //implementation "com.squareup.okhttp3:logging-interceptor:$okhttpLogging"
 }
