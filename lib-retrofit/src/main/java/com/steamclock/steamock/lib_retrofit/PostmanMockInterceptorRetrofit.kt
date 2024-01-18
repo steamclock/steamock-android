@@ -12,13 +12,13 @@ class PostmanMockInterceptorRetrofit(private val postmanMockRepo: PostmanMockRep
         val ongoing = chain.request().newBuilder()
         var request = chain.request()
 
-        when (val mockResponse = postmanMockRepo.getMockForPath(request.url().encodedPath())) {
+        when (val mockResponse = postmanMockRepo.getMockForPath(request.url.encodedPath)) {
             is MockResponse.NoneAvailable -> {
                 mockResponse.hadError?.let { /* todo Could do specific error handling here */ }
 
                 // Determine if we want to block the original request from continuing.
                 return when (postmanMockRepo.mockState) {
-                    MockState.MOCKS_ONLY -> throw IllegalStateException("Mocking enforced, but no mock selected for ${request.url()}")
+                    MockState.MOCKS_ONLY -> throw IllegalStateException("Mocking enforced, but no mock selected for ${request.url}")
                     else -> chain.proceed(ongoing.build())
                 }
             }
@@ -37,7 +37,7 @@ class PostmanMockInterceptorRetrofit(private val postmanMockRepo: PostmanMockRep
                 } catch (e: Exception) {
                     Log.w("MockingRequestInterceptor", "Failed to load mock\n${e.stackTraceToString()}")
                     when (postmanMockRepo.mockState) {
-                        MockState.MOCKS_ONLY -> throw IllegalStateException("Mocking enforced, but failed to set mock for ${request.url()}")
+                        MockState.MOCKS_ONLY -> throw IllegalStateException("Mocking enforced, but failed to set mock for ${request.url}")
                         else -> chain.proceed(ongoing.build())
                     }
                 }

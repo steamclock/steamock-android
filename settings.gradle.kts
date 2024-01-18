@@ -15,6 +15,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "Steamock"
 include(":app")
-include(":lib")
+include(":lib-core")
 include(":lib-ktor")
 include(":lib-retrofit")

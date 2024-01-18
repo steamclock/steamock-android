@@ -52,7 +52,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":lib"))
+    implementation(project(":lib-core"))
     implementation(project(":lib-ktor"))
 
     implementation("androidx.core:core-ktx:1.9.0")

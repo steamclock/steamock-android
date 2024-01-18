@@ -1,13 +1,14 @@
 package com.steamclock.steamock
 
+import android.util.Log
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
-import com.steamclock.steamock.lib.api.LocalConsoleLogger
 import com.steamclock.steamock.lib_ktor.PostmanMockInterceptorKtor
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
@@ -48,6 +49,15 @@ class ExampleApiClient(
     suspend fun makeRequest(fullUrl: String): String {
         val response = internalClient.get(fullUrl)
         return response.body()
+    }
+}
+
+/**
+ * Utility class to log to console
+ */
+class LocalConsoleLogger : Logger {
+    override fun log(message: String) {
+        Log.d("LocalConsoleLogger", message)
     }
 }
 

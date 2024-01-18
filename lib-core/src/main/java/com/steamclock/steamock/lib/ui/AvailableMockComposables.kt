@@ -90,8 +90,8 @@ fun AvailableMocks(
 private fun MocksForApi(
     modifier: Modifier = Modifier,
     api: Postman.TypedItem.API,
-    enabledMock: Postman.Response?,
-    onMockSelected: (Postman.Response) -> Unit,
+    enabledMock: Postman.SavedMock?,
+    onMockSelected: (Postman.SavedMock) -> Unit,
     onMockDeselected: () -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -154,8 +154,8 @@ private fun MocksForApi(
 private fun PostmanItem(
     item: Postman.Item,
     startOffset: Dp = 0.dp, // Used to indent folder items for visual grouping
-    enabledMocks: Map<ApiName, Postman.Response>?,
-    onMockChanged: (ApiName, Postman.Response?) -> Unit // ApiName, MockRawUrl, Selected
+    enabledMocks: Map<ApiName, Postman.SavedMock>?,
+    onMockChanged: (ApiName, Postman.SavedMock?) -> Unit // ApiName, MockRawUrl, Selected
 ) {
     when (val typed = Postman.TypedItem.from(item)) {
         is Postman.TypedItem.API -> {
@@ -204,11 +204,11 @@ private fun PostmanItem(
 @Composable
 private fun AvailableMocks(
     collection: Postman.Collection,
-    enabledMocks: Map<ApiName, Postman.Response>?,
+    enabledMocks: Map<ApiName, Postman.SavedMock>?,
     mockResponseDelayMs: Int,
     onUpdateMockDelayMs: (Int) -> Unit,
     onAllMocksCleared: () -> Unit,
-    onMockChanged: (ApiName, Postman.Response?) -> Unit, // ApiName, MockRawUrl, Selected
+    onMockChanged: (ApiName, Postman.SavedMock?) -> Unit, // ApiName, MockRawUrl, Selected
     // Support for mock "groups"
     availableGroups: Set<String>,
     selectedGroupName: String?,
@@ -403,7 +403,7 @@ fun GroupDropDownMenu(
 @Composable
 fun AvailableMock(
     modifier: Modifier = Modifier,
-    mock: Postman.Response,
+    mock: Postman.SavedMock,
     isEnabled: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -456,7 +456,7 @@ fun AvailableMockPreview() {
     MaterialTheme {
         AvailableMock(
             isEnabled = true,
-            mock = Postman.Response(
+            mock = Postman.SavedMock(
                 id = "1",
                 name = "test",
                 originalRequest = Postman.OriginalRequest(

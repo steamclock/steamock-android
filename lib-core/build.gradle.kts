@@ -110,12 +110,7 @@ dependencies {
     // Data serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
-    // Networking (ktor)
-    // https://ktor.io/docs/migrating-2.html#testing-api
-    implementation("io.ktor:ktor-client-core:2.3.6")
-    implementation("io.ktor:ktor-client-cio:2.3.6")
-    implementation("io.ktor:ktor-client-logging:2.3.6")
-    implementation("io.ktor:ktor-client-auth:2.3.6")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.6")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
+    // Basic network calls (Postman APIs)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp-coroutines:5.0.0-alpha.12")
 }

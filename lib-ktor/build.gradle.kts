@@ -30,7 +30,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":lib"))
+    implementation(project(":lib-core"))
 
     // Networking (ktor)
     // https://ktor.io/docs/migrating-2.html#testing-api

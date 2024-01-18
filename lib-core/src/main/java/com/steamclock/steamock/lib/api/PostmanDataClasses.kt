@@ -1,7 +1,13 @@
 package com.steamclock.steamock.lib.api
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
+/**
+ * Postman actually sends back more data than we need, for now I have just commented out the unused fields,
+ * but in the future we could remove them if they go unused.
+ */
 @Serializable
 object Postman {
     @Serializable
@@ -19,7 +25,7 @@ object Postman {
     data class Info(
         //val _postman_id: String,
         val name: String,
-        val schema: String,
+        //val schema: String,
         //val fork: Fork,
         val updatedAt: String,
         //val uid: String
@@ -43,33 +49,32 @@ object Postman {
         // API calls contain request and response data
         //val protocolProfileBehavior: ProtocolProfileBehavior,
         //val request: Request,
-        val response: List<Response>? = null,
+        @SerialName("response") val savedMocks: List<SavedMock>? = null,
         //val uid: String
     ) {
-        fun getMockForGroup(groupName: String): Response? {
-            return response?.firstOrNull { mock ->
+        fun getMockForGroup(groupName: String): SavedMock? {
+            return savedMocks?.firstOrNull { mock ->
                mock.originalRequest.url.getQueryValueFor("group") == groupName
             }
         }
     }
 
     /**
-     * Items may be individual APIs or folders of Items, based on the properties they include;
-     * TypedItem allows us to force a class so that we can be more explicit with our
-     * Composables.
+     * "Item"s may be individual APIs or folders of Items, and we want to be able to parse them into separate types
+     * so we can build our Composables accordingly
      */
     sealed class TypedItem(val name: String, val id: String) {
-        class API(name: String, id: String, val response: List<Response>): TypedItem(name, id)
+        class API(name: String, id: String, val response: List<SavedMock>): TypedItem(name, id)
         class Folder(name: String, id: String, val item: List<Item>): TypedItem(name, id)
 
         companion object {
             fun from(item: Item): TypedItem {
                 return when {
-                    item.item != null && item.response == null -> {
+                    item.item != null && item.savedMocks == null -> {
                         Folder(item.name, item.id, item.item)
                     }
-                    item.item == null && item.response != null -> {
-                        API(item.name, item.id, item.response)
+                    item.item == null && item.savedMocks != null -> {
+                        API(item.name, item.id, item.savedMocks)
                     }
                     else -> {
                         API(item.name, item.id, listOf())
@@ -90,9 +95,10 @@ object Postman {
 //        val header: List<Any>
 //    )
 
-    // Specific Mock level
+    // Specific Mock level; this is actually a "response" object from the Postman json, however,
+    // we rename it here for clarity.
     @Serializable
-    data class Response(
+    data class SavedMock(
         val id: String,
         val name: String,
         val originalRequest: OriginalRequest,
@@ -112,30 +118,6 @@ object Postman {
         //val header: List<Any>,
         val url: Url
     )
-
-//    fun OriginalRequest.modifyHost(newHost: String): OriginalRequest {
-//        val newRawUrl = StringBuilder()
-//        newRawUrl.append(newHost)
-//        newRawUrl.append(url.path.joinToString("/"))
-//        if (url.query.isNotEmpty()) {
-//            val queryString = url.query.joinToString("&") { "${it.key}=${it.value}" }
-//            newRawUrl.append("?$queryString")
-//        }
-//
-//        val newHostUrl = Url(newHost)
-//        val newHostPostmanUrl = Url(
-//            raw = newRawUrl.toString(),
-//            protocol = newHostUrl.protocol.toString(),
-//            host = newHostUrl.host.split("."),
-//            path = this.url.path,
-//            query = this.url.query
-//        )
-//
-//        return OriginalRequest(
-//            method = this.method,
-//            url = newHostPostmanUrl
-//        )
-//    }
 
     @Serializable
     data class Url(
@@ -167,10 +149,9 @@ object Postman {
         val description: String? = null
     )
 
-    @Serializable
-    data class Header(
-        val key: String,
-        val value: String
-    )
+//    @Serializable
+//    data class Header(
+//        val key: String,
+//        val value: String
+//    )
 }
-

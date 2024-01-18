@@ -8,8 +8,12 @@ import com.steamclock.steamock.lib.api.PostmanAPIClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-typealias ApiName = String // APiName is defined by the admin in Postman directly, and may not be related to the actual API URL path
-typealias PostmanMockedAPI = Postman.Response
+/**
+ * When setting up an API call in Postman, the administrator can name the call in Postman.
+ * For example, "Get Dashboard" could be the name of the postman call for the "{base}/api/dashboard" endpoint.
+ * This typealias aims to make it clear that we are referencing that custom Postman name.
+ */
+typealias ApiName = String
 
 /**
  * PostmanMockRepo is responsible for storing the collection of available mocks, all mocks that are currently
@@ -47,7 +51,7 @@ class PostmanMockRepo(
     /**
      * Mapping of all mocks enabled by the user, keyed by the API name.
      */
-    private val mutableEnabledMocks = MutableStateFlow<Map<ApiName, PostmanMockedAPI>>(mapOf())
+    private val mutableEnabledMocks = MutableStateFlow<Map<ApiName, Postman.SavedMock>>(mapOf())
     val enabledMocks = mutableEnabledMocks.asStateFlow()
 
     //==================================================================
@@ -57,7 +61,7 @@ class PostmanMockRepo(
         queryMockCollection(config.mockCollectionId)
     }
 
-    suspend fun enableMock(apiName: ApiName, mock: Postman.Response) {
+    suspend fun enableMock(apiName: ApiName, mock: Postman.SavedMock) {
         val mocks = mutableEnabledMocks.value?.toMutableMap() ?: mutableMapOf() // Create a new mutable map based on the existing value
         mocks[apiName] = mock
         mutableEnabledMocks.emit(mocks)
@@ -77,7 +81,7 @@ class PostmanMockRepo(
         clearAllMocks()
 
         val flattenedItems = flattenedItems(mockCollection.value?.item)
-            .filter { !it.response.isNullOrEmpty() }
+            .filter { !it.savedMocks.isNullOrEmpty() }
 
         flattenedItems.forEach { item ->
             item.getMockForGroup(name)?.let { mock ->
@@ -125,7 +129,7 @@ class PostmanMockRepo(
     private suspend fun queryMockCollection(collectionId: String) {
         mutableMockCollectionState.emit(ContentLoadViewState.Loading)
         try {
-            val response = postmanClient.getCollection(collectionId).collection
+            val response = postmanClient.getCollection(collectionId)!!.collection
             mutableMockCollection.emit(response)
 
             // Determine available groups from response
@@ -157,10 +161,10 @@ class PostmanMockRepo(
     private fun findMockingGroups(collection: Postman.Collection): Set<String> {
         val groupNames = mutableSetOf<String>()
         val flattenedItems = flattenedItems(collection.item)
-            .filter { !it.response.isNullOrEmpty() }
+            .filter { !it.savedMocks.isNullOrEmpty() }
 
         flattenedItems.forEach { item ->
-            item.response?.forEach { mock ->
+            item.savedMocks?.forEach { mock ->
                 mock.originalRequest.url.getQueryValueFor("group")?.let { group ->
                     groupNames.add(group)
                 }
@@ -175,7 +179,7 @@ class PostmanMockRepo(
     /**
      * Returns the URL we need to use to request the given PostmanMock.
      */
-    private fun getMockedUrl(mock: PostmanMockedAPI): String {
+    private fun getMockedUrl(mock: Postman.SavedMock): String {
         return StringBuilder().apply {
             append(config.mockServerUrl)
             append("/")

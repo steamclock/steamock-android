@@ -30,7 +30,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":lib"))
+    implementation(project(":lib-core"))
 
     // Networking (retrofit)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
