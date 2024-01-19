@@ -1,13 +1,22 @@
 # Postman Mocking Library
 
-One of our current initiatives at Steamclock is to bring our mocked data into alignment between platforms on projects, and to improve our ability to easily add and modify existing mocked data (ideally without having to rebuild projects). One area of research has been to use Postman's mocking server framework, and this library serves as an example on how we use Postman's APIs to get access to mocks we have created as well as provide a unified UX for doing so across all of our Android applications.
+One of our current initiatives at Steamclock is to bring our mocked data into alignment between platforms on projects.
+Our main goals are to:
+* Have a single source of truth for our mock data.
+* Have a unified UI for displaying, enabling and disabling mocks in our apps.
+* Improve our ability to easily add and modify existing mocked data (ideally without having to rebuild projects).
+
+One area of research has been to use Postman's mocking server framework to house our mocks. This library serves as an example on how we use Postman's APIs to get access to mocks and to supply a common UI for listing, enabling and disabling desired mocks on Android applications.
 
 *Disclaimer: This repo is still under active development, and will most likely change and evolve over time.*
 
 ## What is contained in this repo?
-This repo is split into two modules:
-1. The sample **app** module, which contains a quick and dirty example on how to use the underlying library.
-2. The **lib** module, which contains the code that queries Postman, the Repository for tracking the list of all available mocks and which of these have been enabled, as well as some Composable functions which create the UI to interact with all available mocks.
+This repo is split into a few modules:
+1. **app**: A quick and dirty example on how to use the underlying library.
+2. **lib-core**: The core logic for our library, it contains the code that queries Postman, the Repository for tracking the list of all available mocks and which of these have been enabled, as well as some Composable functions which create the UI to interact with all available mocks.
+3. **lib-ktor**: Contains the interceptor for hooking into apps that use the Ktor networking library.
+4. **lib-retrofit**: Contains the interceptor for hooking into apps that use the Retrofit networking library.
+
 
 ## Running the sample app
 The sample app will not run on it's own, and requires some information about the Postman mocking environment - all of which will be placed in the project's `local.properties`.
