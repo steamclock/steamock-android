@@ -25,7 +25,6 @@ class PostmanMockInterceptorKtor(
     override fun prepare(block: Unit.() -> Unit): PostmanMockInterceptorKtor = this
 
     override fun install(feature: PostmanMockInterceptorKtor, scope: HttpClient) {
-
         scope.requestPipeline.intercept(HttpRequestPipeline.Before) {
             when (val mockResponse = postmanMockRepo.getMockForPath(context.url.encodedPath)) {
                 is MockResponse.NoneAvailable -> {
@@ -40,6 +39,8 @@ class PostmanMockInterceptorKtor(
                 }
                 is MockResponse.HasMockUrl -> {
                     try {
+                        context.header("x-mock-response-id", mockResponse.mockId)
+
                         // Add delay header if desired
                         if (postmanMockRepo.mockResponseDelayMs > 0) {
                             Log.d("MockingRequestInterceptor", "x-mock-response-delay: ${postmanMockRepo.mockResponseDelayMs}ms")

@@ -113,7 +113,7 @@ class PostmanMockRepo(
             } ?: return MockResponse.NoneAvailable(hadError = null)
 
             // Pass back the mocking server URL we should use in place
-            MockResponse.HasMockUrl(getMockedUrl(mock))
+            MockResponse.HasMockUrl(mock.id, getMockedUrl(mock))
         } catch (e: Exception) {
             MockResponse.NoneAvailable(hadError = e)
         }
