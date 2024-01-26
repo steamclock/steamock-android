@@ -9,9 +9,13 @@ plugins {
 //============================================================
 // Maven/Jitpack Publishing
 //============================================================
-val sourcesJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(android.sourceSets.getByName("main").java.srcDirs)
+android {
+    publishing {
+        singleVariant("release") {
+            withJavadocJar()
+            withSourcesJar()
+        }
+    }
 }
 
 afterEvaluate {
@@ -19,7 +23,6 @@ afterEvaluate {
         publications {
             val release by publications.registering(MavenPublication::class) {
                 from(components["release"])
-                artifact(sourcesJar.get())
                 artifactId = "lib-core"
                 groupId = "com.github.steamclock.steamock-android"
                 version = "1.0"
