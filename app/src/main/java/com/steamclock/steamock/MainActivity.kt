@@ -47,9 +47,9 @@ class MainActivity : ComponentActivity() {
     // be setup via dependency injection.
     //=================================================================
     private val postmanConfig = PostmanMockConfig(
-        postmanAccessKey = com.steamclock.steamock.lib.BuildConfig.postmanAccessKey,
-        mockCollectionId = com.steamclock.steamock.lib.BuildConfig.postmanMockCollectionId,
-        mockServerUrl = com.steamclock.steamock.lib.BuildConfig.postmanMockServerUrl,
+        postmanAccessKey = com.steamclock.steamock.lib_core.BuildConfig.postmanAccessKey,
+        mockCollectionId = com.steamclock.steamock.lib_core.BuildConfig.postmanMockCollectionId,
+        mockServerUrl = com.steamclock.steamock.lib_core.BuildConfig.postmanMockServerUrl,
         json = appJson,
         logCalls = true
     )
