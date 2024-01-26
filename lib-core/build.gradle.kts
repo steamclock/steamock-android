@@ -6,8 +6,31 @@ plugins {
     kotlin("plugin.serialization") version "1.9.21"
 }
 
+//============================================================
+// Maven/Jitpack Publishing
+//============================================================
+val sourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("sources")
+    from(android.sourceSets.getByName("main").java.srcDirs)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            val release by publications.registering(MavenPublication::class) {
+                from(components["release"])
+                artifact(sourcesJar.get())
+                artifactId = "lib-core"
+                groupId = "com.github.steamclock.steamock-android"
+                version = "1.0"
+            }
+        }
+    }
+}
+//============================================================
+
 android {
-    namespace = "com.steamclock.steamock.lib"
+    namespace = "com.steamclock.steamock.lib_core"
     compileSdk = 34
 
     // Postman mocking setup pulled from local.properties
