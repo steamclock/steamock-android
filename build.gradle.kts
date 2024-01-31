@@ -6,9 +6,9 @@ plugins {
     `maven-publish`
 }
 
-subprojects {
-    /**
-     * Setup maven-publish on all modules; see each module for publication details.
-     */
-    apply(plugin = "maven-publish")
-}
+//subprojects {
+//    /**
+//     * Setup maven-publish on all modules; see each module for publication details.
+//     */
+//    apply(plugin = "maven-publish")
+//}
