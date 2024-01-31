@@ -39,9 +39,9 @@ android {
 
     // Postman mocking setup pulled from local.properties
     val localProps = gradleLocalProperties(rootDir)
-    val postmanAccessKey: String = localProps.getProperty("postmanAccessKey")
-    val postmanMockCollectionId: String = localProps.getProperty("postmanCollectionId")
-    val postmanMockServerUrl: String = localProps.getProperty("postmanMockServerUrl")
+    val postmanAccessKey: String = localProps.getProperty("postmanAccessKey", "")
+    val postmanMockCollectionId: String = localProps.getProperty("postmanCollectionId", "")
+    val postmanMockServerUrl: String = localProps.getProperty("postmanMockServerUrl", "")
 
     defaultConfig {
         minSdk = 24
