@@ -11,7 +11,7 @@ android {
 
     // Postman mocking setup pulled from local.properties
     val localProps = gradleLocalProperties(rootDir)
-    val exampleDefaultUrl: String = localProps.getProperty("exampleDefaultUrl", "")
+    val exampleDefaultUrl: String = localProps.getProperty("exampleDefaultUrl", "\"\"")
 
     defaultConfig {
         applicationId = "com.steamclock.steamock"
