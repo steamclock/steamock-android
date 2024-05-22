@@ -235,9 +235,12 @@ private fun AvailableMocks(
             style = MaterialTheme.typography.h6
         )
 
+        Text(text = "Currently enabled: ${enabledMocks?.size ?: 0}")
+
         Spacer(modifier = Modifier.height(8.dp))
 
-        // todo left off scroll up and down aren't working?
+
+
 
         //---------------------------------------------------------------
         // Global actions
