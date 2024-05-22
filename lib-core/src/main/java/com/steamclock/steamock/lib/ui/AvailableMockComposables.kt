@@ -42,46 +42,67 @@ fun AvailableMocks(
     modifier: Modifier = Modifier,
     mockRepo: PostmanMockRepo
 ) {
+    val mockCollectionState by mockRepo.mockCollectionState.collectAsState()
     val mockCollection by mockRepo.mockCollection.collectAsState()
     val enabledMocks by mockRepo.enabledMocks.collectAsState()
     val mockingGroups by mockRepo.mockGroups.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var selectedGroupName by remember { mutableStateOf<String?>(null) }
 
-    mockCollection?.let { collection ->
-        AvailableMocks(
-            modifier = modifier,
-            collection = collection,
-            enabledMocks = enabledMocks,
-            mockResponseDelayMs = mockRepo.mockResponseDelayMs,
-            onUpdateMockDelayMs = { mockRepo.mockResponseDelayMs = it }, // todo Flow?
-            onAllMocksCleared = {
-                coroutineScope.launch {
-                    mockRepo.clearAllMocks()
-                }
-            },
-            onMockChanged = { apiId, mock ->
-                coroutineScope.launch {
-                    if (mock != null) {
-                        mockRepo.enableMock(apiId, mock)
-                    } else {
-                        mockRepo.disableMock(apiId)
-                    }
-                }
-            },
+    val stateText = when (val immutableState = mockCollectionState) {
+        is ContentLoadViewState.Error -> immutableState.throwable.localizedMessage
+        ContentLoadViewState.Loading -> "Fetching available Postman mocks..."
+        else -> null
+    }
 
-            // Support for mocking "groups"
-            availableGroups = mockingGroups,
-            selectedGroupName = selectedGroupName,
-            onMockGroupSelected = { name ->
-                selectedGroupName = name
-                name?.let {
-                    coroutineScope.launch {
-                        mockRepo.enableAllMocksForGroup(name)
-                    }
+    Column {
+        when (mockCollectionState) {
+            is ContentLoadViewState.Error,
+            is ContentLoadViewState.Loading -> {
+                stateText?.let {
+                    Text(modifier = Modifier.padding(16.dp), text = stateText)
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
-        )
+
+            is ContentLoadViewState.Success -> {
+                mockCollection?.let { collection ->
+                    AvailableMocks(
+                        modifier = modifier,
+                        collection = collection,
+                        enabledMocks = enabledMocks,
+                        mockResponseDelayMs = mockRepo.mockResponseDelayMs,
+                        onUpdateMockDelayMs = { mockRepo.mockResponseDelayMs = it }, // todo Flow?
+                        onAllMocksCleared = {
+                            coroutineScope.launch {
+                                mockRepo.clearAllMocks()
+                            }
+                        },
+                        onMockChanged = { apiId, mock ->
+                            coroutineScope.launch {
+                                if (mock != null) {
+                                    mockRepo.enableMock(apiId, mock)
+                                } else {
+                                    mockRepo.disableMock(apiId)
+                                }
+                            }
+                        },
+
+                        // Support for mocking "groups"
+                        availableGroups = mockingGroups,
+                        selectedGroupName = selectedGroupName,
+                        onMockGroupSelected = { name ->
+                            selectedGroupName = name
+                            name?.let {
+                                coroutineScope.launch {
+                                    mockRepo.enableAllMocksForGroup(name)
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -287,6 +308,7 @@ private fun GlobalActions(
     onGroupSelected: (String?) -> Unit,
     onAllMocksCleared: () -> Unit
 ) {
+    val delayStr = if (delay == 0) { "" } else { delay.toString() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -294,7 +316,7 @@ private fun GlobalActions(
     ) {
         TextField(
             modifier = Modifier.weight(1f),
-            value = delay.toString(),
+            value = delayStr,
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 imeAction = ImeAction.Done,
@@ -306,7 +328,7 @@ private fun GlobalActions(
                 }
             ),
             onValueChange = {
-                val result = it.replaceFirst("^0+(?!$)", "")
+                val result = it.replace(Regex("[^0-9]"), "")
                 val delay = if (result.isBlank()) { 0 } else { result.toInt() }
                 onDelayUpdated(delay)
             },
@@ -436,7 +458,14 @@ fun AvailableMock(
     }
 }
 
+@Composable
+fun PostmanAPIKeyInput() {
+    // todo
+}
 
+// ========================================================================
+// Previews
+// ========================================================================
 @Composable
 @Preview(widthDp = 400, showBackground = true, backgroundColor = 0xFFFFFFFF)
 fun GlobalActionsPreview() {
