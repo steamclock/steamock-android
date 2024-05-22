@@ -118,52 +118,41 @@ class MainActivity : ComponentActivity() {
                 color = MaterialTheme.colors.background
             ) {
                 Column {
-                    when (mockCollectionState) {
-                        is ContentLoadViewState.Error,
-                        is ContentLoadViewState.Loading -> {
-                            stateText?.let {
-                                Text(modifier = Modifier.padding(16.dp), text = stateText)
-                                Spacer(modifier = Modifier.height(16.dp))
-                            }
-                        }
+                    // Input to allow us to test the interception
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .wrapContentSize()
+                    ) {
+                        Text(
+                            text = "Request Simulator",
+                            style = MaterialTheme.typography.h6
+                        )
 
-                        is ContentLoadViewState.Success -> {
-                            // Input to allow us to test the interception
-                            Column(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .wrapContentSize()
-                            ) {
-                                Text(
-                                    text = "Request Simulator",
-                                    style = MaterialTheme.typography.h6
-                                )
+                        OutlinedTextField(
+                            value = exampleAPIUrl,
+                            onValueChange = { exampleAPIUrl = it }
+                        )
 
-                                OutlinedTextField(
-                                    value = exampleAPIUrl,
-                                    onValueChange = { exampleAPIUrl = it }
-                                )
-
-                                Button(
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            exampleApiRepo.makeRequest(exampleAPIUrl)
-                                        }
-                                    }
-                                ) {
-                                    Text(text = "Send Request")
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    exampleApiRepo.makeRequest(exampleAPIUrl)
                                 }
                             }
-
-                            // Available mocks takes up the rest of the page
-                            Box(modifier = Modifier
-                                .weight(1f)
-                                .border(4.dp, MaterialTheme.colors.primary)) {
-                                AvailableMocks(
-                                    mockRepo = postmanRepo
-                                )
-                            }
+                        ) {
+                            Text(text = "Send Request")
                         }
+                    }
+
+                    // Available mocks takes up the rest of the page
+                    Box(modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .border(4.dp, MaterialTheme.colors.primary)) {
+                        AvailableMocks(
+                            mockRepo = postmanRepo
+                        )
                     }
                 }
             }
