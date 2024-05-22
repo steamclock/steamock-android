@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import com.steamclock.steamock.lib.api.Postman
+import com.steamclock.steamock.lib.api.PostmanAPIKeyException
 import com.steamclock.steamock.lib.repo.ApiName
 import kotlinx.coroutines.launch
 
@@ -49,22 +50,33 @@ fun AvailableMocks(
     val coroutineScope = rememberCoroutineScope()
     var selectedGroupName by remember { mutableStateOf<String?>(null) }
 
-    val stateText = when (val immutableState = mockCollectionState) {
-        is ContentLoadViewState.Error -> immutableState.throwable.localizedMessage
-        ContentLoadViewState.Loading -> "Fetching available Postman mocks..."
-        else -> null
+    LaunchedEffect(Unit) {
+        mockRepo.requestCollectionUpdate()
     }
 
     Column {
-        when (mockCollectionState) {
-            is ContentLoadViewState.Error,
+        when (val state = mockCollectionState) {
             is ContentLoadViewState.Loading -> {
-                stateText?.let {
-                    Text(modifier = Modifier.padding(16.dp), text = stateText)
-                    Spacer(modifier = Modifier.height(16.dp))
+                Text(modifier = Modifier.padding(16.dp), text = "Fetching available Postman mocks...")
+            }
+            is ContentLoadViewState.Error -> {
+                when (state.throwable) {
+                    is PostmanAPIKeyException -> {
+                        // Postman API key has expired; allow manual entry of a new one until a new
+                        // build can be made.
+                        PostmanAPIKeyInput { newKey ->
+                            mockRepo.updatePostmanAccessKey(newKey)
+                            coroutineScope.launch { mockRepo.requestCollectionUpdate() }
+                        }
+                    }
+                    else -> {
+                        Text(
+                            modifier = Modifier.padding(16.dp),
+                            text = state.throwable.message ?: "Error fetching Postman Collection"
+                        )
+                    }
                 }
             }
-
             is ContentLoadViewState.Success -> {
                 mockCollection?.let { collection ->
                     AvailableMocks(
@@ -237,11 +249,9 @@ private fun AvailableMocks(
     selectedGroupName: String?,
     onMockGroupSelected: (String?) -> Unit // GroupName
 ) {
-    var delay by rememberSaveable { mutableStateOf(mockResponseDelayMs) }
+    var delay by rememberSaveable { mutableIntStateOf(mockResponseDelayMs) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-
-    // todo delay can input letters which breaks, validate input
 
     Column(
         modifier = modifier
@@ -259,9 +269,6 @@ private fun AvailableMocks(
         Text(text = "Currently enabled: ${enabledMocks?.size ?: 0}")
 
         Spacer(modifier = Modifier.height(8.dp))
-
-
-
 
         //---------------------------------------------------------------
         // Global actions
@@ -459,8 +466,27 @@ fun AvailableMock(
 }
 
 @Composable
-fun PostmanAPIKeyInput() {
-    // todo
+fun PostmanAPIKeyInput(
+    onNewAPIKey: (String) -> Unit
+) {
+    var apiKey by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = "Postman API Key is no longer valid; please enter a new one."
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = apiKey, onValueChange = { apiKey = it }
+        )
+
+        Button(onClick = { onNewAPIKey(apiKey) }) {
+            Text(text = "Save")
+        }
+    }
+
+
 }
 
 // ========================================================================

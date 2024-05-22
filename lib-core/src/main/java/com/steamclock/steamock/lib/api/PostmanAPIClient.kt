@@ -11,7 +11,7 @@ import okhttp3.executeAsync
  * eventually mocking) data
  */
 class PostmanAPIClient(
-    private val config: PostmanMockConfig
+    private var config: PostmanMockConfig
 ) {
     private val json = Json{
         isLenient = true
@@ -43,9 +43,18 @@ class PostmanAPIClient(
             json.decodeFromString<Postman.CollectionResponse>(responseBody)
         } else {
             when(response.code) {
-                401 -> throw(Exception("Error: Unauthorized - Check your Postman API key"))
+                401 -> throw(PostmanAPIKeyException())
                 else -> throw(Exception("Error: ${response.code} - ${response.message}"))
             }
         }
     }
+
+    /**
+     *
+     */
+    fun updatePostmanAccessKey(newKey: String) {
+        config = config.copy(postmanAccessKey = newKey)
+    }
 }
+
+class PostmanAPIKeyException : Exception("Error: Unauthorized - Check your Postman API key")

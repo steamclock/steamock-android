@@ -86,16 +86,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val coroutineScope = rememberCoroutineScope()
-            val mockCollectionState by postmanRepo.mockCollectionState.collectAsState()
             val exampleAPIResponse by exampleApiRepo.apiResponse.collectAsState()
             var exampleAPIUrl by remember { mutableStateOf(BuildConfig.exampleDefaultUrl) }
             var openAlertDialog by remember { mutableStateOf(true) }
-
-            val stateText = when (val immutableState = mockCollectionState) {
-                is ContentLoadViewState.Error -> immutableState.throwable.localizedMessage
-                ContentLoadViewState.Loading -> "Fetching available Postman mocks..."
-                else -> null
-            }
 
             if (openAlertDialog) {
                 WelcomeDialog { openAlertDialog = false }
@@ -106,10 +99,6 @@ class MainActivity : ComponentActivity() {
                     text = exampleAPIResponse,
                     onDismiss = { exampleApiRepo.clearLastResponse() }
                 )
-            }
-
-            LaunchedEffect(Unit) {
-                postmanRepo.requestCollectionUpdate()
             }
 
             // A surface container using the 'background' color from the theme

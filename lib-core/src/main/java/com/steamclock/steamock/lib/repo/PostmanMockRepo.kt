@@ -27,6 +27,9 @@ class PostmanMockRepo(
     var mockResponseDelayMs = 0
 
     private val postmanClient = PostmanAPIClient(config)
+    fun updatePostmanAccessKey(newKey: String) {
+        postmanClient.updatePostmanAccessKey(newKey)
+    }
 
     /**
      * Load state for list of all mocks available on Postman.
