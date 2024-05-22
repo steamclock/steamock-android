@@ -11,6 +11,7 @@ class ExampleApiRepo(
 ) {
     private val mutableApiResponse = MutableStateFlow("")
     val apiResponse = mutableApiResponse.asStateFlow()
+    fun clearLastResponse() { mutableApiResponse.value = "" }
 
     suspend fun makeRequest(fullUrl: String) {
         mutableApiResponse.emit("Loading...")

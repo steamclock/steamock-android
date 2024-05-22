@@ -3,42 +3,47 @@ package com.steamclock.steamock
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
-import com.steamclock.steamock.lib.PostmanMockConfig
-import com.steamclock.steamock.lib.repo.PostmanMockRepo
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.steamclock.steamock.lib.PostmanMockConfig
 import com.steamclock.steamock.lib.repo.MockState
-import com.steamclock.steamock.lib.ui.ContentLoadViewState
+import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import com.steamclock.steamock.lib.ui.AvailableMocks
+import com.steamclock.steamock.lib.ui.ContentLoadViewState
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -84,10 +89,7 @@ class MainActivity : ComponentActivity() {
             val mockCollectionState by postmanRepo.mockCollectionState.collectAsState()
             val exampleAPIResponse by exampleApiRepo.apiResponse.collectAsState()
             var exampleAPIUrl by remember { mutableStateOf(BuildConfig.exampleDefaultUrl) }
-
             var openAlertDialog by remember { mutableStateOf(true) }
-            var showingStubs by remember { mutableStateOf(false) }
-            var showingExample by remember { mutableStateOf(false) }
 
             val stateText = when (val immutableState = mockCollectionState) {
                 is ContentLoadViewState.Error -> immutableState.throwable.localizedMessage
@@ -95,80 +97,76 @@ class MainActivity : ComponentActivity() {
                 else -> null
             }
 
+            if (openAlertDialog) {
+                WelcomeDialog { openAlertDialog = false }
+            }
+
+            if (exampleAPIResponse.isNotEmpty()) {
+                ResponseDialog(
+                    text = exampleAPIResponse,
+                    onDismiss = { exampleApiRepo.clearLastResponse() }
+                )
+            }
+
+            LaunchedEffect(Unit) {
+                postmanRepo.requestCollectionUpdate()
+            }
+
             // A surface container using the 'background' color from the theme
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colors.background
             ) {
-                LazyColumn {
+                Column {
                     when (mockCollectionState) {
                         is ContentLoadViewState.Error,
                         is ContentLoadViewState.Loading -> {
                             stateText?.let {
-                                item {
-                                    Text(modifier = Modifier.padding(16.dp), text = stateText)
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                }
+                                Text(modifier = Modifier.padding(16.dp), text = stateText)
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
+
                         is ContentLoadViewState.Success -> {
-                            // List all mocks
-                            item {
-                                CollapsableContent(
-                                    title = "Available Postman Mocks",
-                                    isExpanded = showingStubs,
-                                    onRowClicked = { showingStubs = !showingStubs },
-                                    content = { AvailableMocks(mockRepo = postmanRepo) }
+                            // Input to allow us to test the interception
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .wrapContentSize()
+                            ) {
+                                Text(
+                                    text = "Request Simulator",
+                                    style = MaterialTheme.typography.h6
                                 )
-                            }
 
-                            // Setup intercept requests
-                            item {
-                                Spacer(modifier = Modifier.height(16.dp))
+                                OutlinedTextField(
+                                    value = exampleAPIUrl,
+                                    onValueChange = { exampleAPIUrl = it }
+                                )
 
-                                CollapsableContent(
-                                    title = "Intercept Requests",
-                                    isExpanded = showingExample,
-                                    onRowClicked = { showingExample = !showingExample },
-                                    content = {
-                                        Column(
-                                            modifier = Modifier.padding(16.dp)
-                                        ) {
-                                            OutlinedTextField(
-                                                value = exampleAPIUrl,
-                                                onValueChange = { exampleAPIUrl = it }
-                                            )
-
-                                            Button(
-                                                onClick = {
-                                                    coroutineScope.launch {
-                                                        exampleApiRepo.makeRequest(exampleAPIUrl)
-                                                    }
-                                                }
-                                            ) {
-                                                Text(text = "Send Request")
-                                            }
-
-                                            Text(
-                                                text = exampleAPIResponse
-                                            )
+                                Button(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            exampleApiRepo.makeRequest(exampleAPIUrl)
                                         }
                                     }
+                                ) {
+                                    Text(text = "Send Request")
+                                }
+                            }
+
+                            // Available mocks takes up the rest of the page
+                            Box(modifier = Modifier
+                                .weight(1f)
+                                .border(4.dp, MaterialTheme.colors.primary)) {
+                                AvailableMocks(
+                                    mockRepo = postmanRepo
                                 )
                             }
                         }
                     }
-
-                }
-
-                if (openAlertDialog) {
-                    WelcomeDialog { openAlertDialog = false }
                 }
             }
-        }
-
-        lifecycleScope.launch {
-            postmanRepo.requestCollectionUpdate()
         }
     }
 }
@@ -202,38 +200,36 @@ private fun WelcomeDialog(
 }
 
 @Composable
-private fun CollapsableContent(
-    title: String,
-    isExpanded : Boolean,
-    onRowClicked: () -> Unit,
-    content: @Composable () -> Unit
+private fun ResponseDialog(
+    text: String,
+    onDismiss: () -> Unit
 ) {
-    Divider()
+    Dialog(
+        onDismissRequest = { onDismiss() },
+        content = {
+            Column(
+                modifier = Modifier.fillMaxHeight(0.7f).fillMaxWidth().background(Color.White)
+            ) {
+                Box(
+                    modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = text,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onRowClicked() },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            modifier = Modifier.weight(1f).padding(8.dp),
-            fontSize = 24.sp,
-            text = title,
-        )
-        Icon(
-            modifier = Modifier.wrapContentSize().padding(8.dp),
-            imageVector =  if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = null
-        )
-    }
-    Divider()
-
-    AnimatedVisibility(
-        visible = isExpanded,
-        enter = fadeIn(animationSpec = tween(200)),
-        exit = fadeOut(animationSpec = tween(200))
-    ) {
-        content()
-    }
+                Row(
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .align(Alignment.End)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    TextButton(onClick = { onDismiss() }) {
+                        Text("Ok")
+                    }
+                }
+            }
+        }
+    )
 }

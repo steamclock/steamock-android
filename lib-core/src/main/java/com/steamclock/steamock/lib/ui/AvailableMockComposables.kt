@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -38,6 +39,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun AvailableMocks(
+    modifier: Modifier = Modifier,
     mockRepo: PostmanMockRepo
 ) {
     val mockCollection by mockRepo.mockCollection.collectAsState()
@@ -48,6 +50,7 @@ fun AvailableMocks(
 
     mockCollection?.let { collection ->
         AvailableMocks(
+            modifier = modifier,
             collection = collection,
             enabledMocks = enabledMocks,
             mockResponseDelayMs = mockRepo.mockResponseDelayMs,
@@ -166,7 +169,6 @@ private fun PostmanItem(
 
             // Else show all the mocks available for the given API
             val enabledMock = enabledMocks?.get(item.name)
-            Divider(startIndent = startOffset)
             Spacer(modifier = Modifier.height(8.dp))
             MocksForApi(
                 modifier = Modifier.padding(start = startOffset),
@@ -180,7 +182,6 @@ private fun PostmanItem(
         is Postman.TypedItem.Folder -> {
             // We have a folder of possible items, show the older name and then iterate
             // through all items in the folder.
-            Divider(startIndent = startOffset)
             Text(
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
                 text = typed.name,
@@ -203,6 +204,7 @@ private fun PostmanItem(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AvailableMocks(
+    modifier: Modifier,
     collection: Postman.Collection,
     enabledMocks: Map<ApiName, Postman.SavedMock>?,
     mockResponseDelayMs: Int,
@@ -219,15 +221,15 @@ private fun AvailableMocks(
     val focusManager = LocalFocusManager.current
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(16.dp)
-            .scrollable(rememberScrollState(), orientation = Orientation.Vertical)
+            .verticalScroll(rememberScrollState())
     ) {
         //---------------------------------------------------------------
         // Collection name
         //---------------------------------------------------------------
         Text(
-            text = collection.info.name,
+            text = "Mocks available for ${collection.info.name}",
             style = MaterialTheme.typography.h6
         )
 
@@ -253,7 +255,6 @@ private fun AvailableMocks(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-        Divider()
 
         //---------------------------------------------------------------
         // APIs in collection
@@ -268,7 +269,6 @@ private fun AvailableMocks(
                 )
             }
             // Final bottom divider
-            Divider()
         }
     }
 }
