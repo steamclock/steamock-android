@@ -141,7 +141,7 @@ private fun MocksForApi(
                     if (checked) {
                         onMockSelected(mock)
                     } else {
-                        onMockDeselected
+                        onMockDeselected()
                     }
                 }
             )
@@ -220,6 +220,8 @@ private fun AvailableMocks(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
+    // todo delay can input letters which breaks, validate input
+
     Column(
         modifier = modifier
             .padding(16.dp)
@@ -245,7 +247,7 @@ private fun AvailableMocks(
             onDelayUpdated = { delay = it },
             onDelayDone = {
                 onUpdateMockDelayMs(delay)
-                //keyboardController?.hide()
+                keyboardController?.hide()
                 focusManager.clearFocus()
             },
             availableGroups = availableGroups,
@@ -268,7 +270,6 @@ private fun AvailableMocks(
                     onMockChanged = onMockChanged
                 )
             }
-            // Final bottom divider
         }
     }
 }
