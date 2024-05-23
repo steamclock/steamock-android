@@ -15,7 +15,11 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 typealias ApiName = String
 
-data class MockedAPI(val name: String, val url: String?)
+/**
+ * Small data class that associates a mocked API (endpoint) name in Postman with it's URL.
+ * This is mostly used for the sample app to allow us to easily simulate all of the API calls.
+ */
+data class MockedAPI(val name: ApiName, val url: String?)
 
 /**
  * PostmanMockRepo is responsible for storing the collection of available mocks, all mocks that are currently
@@ -40,10 +44,17 @@ class PostmanMockRepo(
     val mockCollectionState = mutableMockCollectionState.asStateFlow()
 
     /**
-     * The postman collection (which contains a list of all available Postman mocks)
+     * The full postman collection, which contains a list of all available Postman mocks
      */
     private val mutableMockCollection = MutableStateFlow<Postman.Collection?>(null)
     val mockCollection = mutableMockCollection.asStateFlow()
+
+    /**
+     * List of all APIs/Endpoints that have mocks; mostly used for our sample app to allow us to easily simulate
+     * all of the API calls.
+     */
+    private val mutableMockedAPIs = MutableStateFlow<List<MockedAPI>>(emptyList())
+    val mockedAPIs = mutableMockedAPIs.asStateFlow()
 
     /**
      * List of all groups found in the Postman collection.
@@ -59,12 +70,6 @@ class PostmanMockRepo(
     private val mutableEnabledMocks = MutableStateFlow<Map<ApiName, Postman.SavedMock>>(mapOf())
     val enabledMocks = mutableEnabledMocks.asStateFlow()
 
-    /**
-     *
-     */
-    private val mutableMockedAPIs = MutableStateFlow<List<MockedAPI>>(emptyList())
-    val mockedAPIs = mutableMockedAPIs.asStateFlow()
-
     //==================================================================
     // Public methods
     //==================================================================
@@ -73,7 +78,7 @@ class PostmanMockRepo(
     }
 
     suspend fun enableMock(apiName: ApiName, mock: Postman.SavedMock) {
-        val mocks = mutableEnabledMocks.value?.toMutableMap() ?: mutableMapOf() // Create a new mutable map based on the existing value
+        val mocks = mutableEnabledMocks.value.toMutableMap() // Create a new mutable map based on the existing value
         mocks[apiName] = mock
         mutableEnabledMocks.emit(mocks)
     }
@@ -190,16 +195,16 @@ class PostmanMockRepo(
                 mock.originalRequest.url.getQueryValueFor("group")?.let { group ->
                     groupNames.add(group)
                 }
-                Log.v("shayla", mock.originalRequest.url.query.toString())
             }
         }
 
-        Log.v("shayla", flattenedItems.size.toString())
         return groupNames.toSet()
     }
 
     /**
      * Returns the URL we need to use to request the given PostmanMock.
+     * This will be built from the mockServerUrl and the path/query parameters of the original request
+     * for the selected mock.
      */
     private fun getMockedUrl(mock: Postman.SavedMock): String {
         return StringBuilder().apply {

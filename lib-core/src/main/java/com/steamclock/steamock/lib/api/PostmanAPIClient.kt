@@ -50,7 +50,10 @@ class PostmanAPIClient(
     }
 
     /**
-     *
+     * It is possible that the Postman access key will become invalidated if not used for a period of
+     * time. This method allows us to update the key in the client without having to rebuild the app.
+     * todo: We may want to store this in encrypted storage in the future so that we'd only need to set
+     *   it once per install
      */
     fun updatePostmanAccessKey(newKey: String) {
         config = config.copy(postmanAccessKey = newKey)

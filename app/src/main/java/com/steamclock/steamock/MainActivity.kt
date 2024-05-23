@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.steamclock.steamock.lib.PostmanMockConfig
-import com.steamclock.steamock.lib.api.Postman
 import com.steamclock.steamock.lib.repo.MockState
 import com.steamclock.steamock.lib.repo.MockedAPI
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
@@ -111,12 +110,6 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column {
                     // Input to allow us to test the interception
-//                    BasicRequestSimulator { url ->
-//                        coroutineScope.launch {
-//                            exampleApiRepo.makeRequest(url)
-//                        }
-//                    }
-
                     RichRequestSimulator(mockedAPIs) { url ->
                         coroutineScope.launch {
                             exampleApiRepo.makeRequest(url)
@@ -181,7 +174,7 @@ private fun ExposedDropdownMenu(
     onSelected: (MockedAPI) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf("Select an option") }
+    var selectedOption by remember { mutableStateOf("Select an endpoint") }
 
     Column {
         ExposedDropdownMenuBox(
@@ -196,7 +189,7 @@ private fun ExposedDropdownMenu(
                 modifier = Modifier
                     .fillMaxWidth()
                     .exposedDropdownSize(true),
-                label = { Text("Options") },
+                label = { Text("Endpoint") },
                 readOnly = true,
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(
@@ -236,8 +229,8 @@ private fun WelcomeDialog(
             Text(
                 text = "This app is meant to demonstrate how to use Postman to mock APIs in your Android app." +
                         "To get started, you will need to update the local properties for the sample app with your mocking environment setup.\n\n" +
-                        "Once setup, you can view and enable all mocks in the \"Available Postman Mocks\" section below." +
-                        "The \"Intercept Requests\" section can be used to test how calls are intercepted and mocks are returned.",
+                        "Once setup, you can view and enable all mocks in the \"Mocks available for...\" section below." +
+                        "The \"Request Simulator\" section can be used to test how calls are intercepted and mocks are returned.",
                 modifier = Modifier.padding(16.dp)
             )
         },
