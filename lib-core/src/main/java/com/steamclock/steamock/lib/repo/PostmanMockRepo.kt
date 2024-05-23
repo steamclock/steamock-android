@@ -57,6 +57,12 @@ class PostmanMockRepo(
     private val mutableEnabledMocks = MutableStateFlow<Map<ApiName, Postman.SavedMock>>(mapOf())
     val enabledMocks = mutableEnabledMocks.asStateFlow()
 
+    /**
+     *
+     */
+    private val mutableFlattenedMockItems = MutableStateFlow<List<Postman.Item>>(emptyList())
+    val flattenedMockItems = mutableFlattenedMockItems.asStateFlow()
+
     //==================================================================
     // Public methods
     //==================================================================
@@ -134,6 +140,10 @@ class PostmanMockRepo(
         try {
             val response = postmanClient.getCollection(collectionId)!!.collection
             mutableMockCollection.emit(response)
+
+            mutableFlattenedMockItems.emit(
+                flattenedItems(response.item).filter { !it.savedMocks.isNullOrEmpty() }
+            )
 
             // Determine available groups from response
             mutableMockGroups.emit(findMockingGroups(response))
