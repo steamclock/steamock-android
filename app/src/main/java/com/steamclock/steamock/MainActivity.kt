@@ -1,7 +1,6 @@
 package com.steamclock.steamock
 
 import android.os.Bundle
-import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -110,7 +109,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column {
                     // Input to allow us to test the interception
-                    RichRequestSimulator(mockedAPIs) { url ->
+                    RequestSimulator(mockedAPIs) { url ->
                         coroutineScope.launch {
                             exampleApiRepo.makeRequest(url)
                         }
@@ -131,8 +130,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Shows a dropdown list of all the available API/endpoints in the Postman collection
+ * that have at least one mock setup on them. Allows a user to select an API, and then
+ * press a button to simulate making a request to that URL.
+ */
 @Composable
-private fun RichRequestSimulator(
+private fun RequestSimulator(
     mockedAPIs: List<MockedAPI>,
     onSendRequest: (String) -> Unit
 ) {
@@ -149,7 +153,7 @@ private fun RichRequestSimulator(
             style = MaterialTheme.typography.h6
         )
 
-        ExposedDropdownMenu(mockedAPIs) {
+        MockedAPIDropdownMenu(mockedAPIs) {
             it.url?.let { url -> selectedAPIUrl = url }
         }
 
@@ -169,7 +173,7 @@ private fun RichRequestSimulator(
 
 @OptIn(ExperimentalMaterialApi::class) // ExposedDropdownMenuBox
 @Composable
-private fun ExposedDropdownMenu(
+private fun MockedAPIDropdownMenu(
     options: List<MockedAPI>,
     onSelected: (MockedAPI) -> Unit
 ) {
@@ -245,6 +249,9 @@ private fun WelcomeDialog(
     )
 }
 
+/**
+ * Shows the response from the API call in a dialog.
+ */
 @Composable
 private fun ResponseDialog(
     text: String,
