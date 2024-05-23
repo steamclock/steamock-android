@@ -1,6 +1,7 @@
 package com.steamclock.steamock
 
 import android.os.Bundle
+import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -8,11 +9,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
@@ -20,13 +19,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ExposedDropdownMenuBox
+import androidx.compose.material.ExposedDropdownMenuDefaults
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,10 +41,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.steamclock.steamock.lib.PostmanMockConfig
+import com.steamclock.steamock.lib.api.Postman
 import com.steamclock.steamock.lib.repo.MockState
+import com.steamclock.steamock.lib.repo.MockedAPI
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import com.steamclock.steamock.lib.ui.AvailableMocks
-import com.steamclock.steamock.lib.ui.ContentLoadViewState
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -85,9 +88,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val coroutineScope = rememberCoroutineScope()
             val exampleAPIResponse by exampleApiRepo.apiResponse.collectAsState()
-            var exampleAPIUrl by remember { mutableStateOf(BuildConfig.exampleDefaultUrl) }
+            val mockedAPIs by postmanRepo.mockedAPIs.collectAsState()
+            val coroutineScope = rememberCoroutineScope()
             var openAlertDialog by remember { mutableStateOf(true) }
 
             if (openAlertDialog) {
@@ -108,29 +111,15 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column {
                     // Input to allow us to test the interception
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .wrapContentSize()
-                    ) {
-                        Text(
-                            text = "Request Simulator",
-                            style = MaterialTheme.typography.h6
-                        )
+//                    BasicRequestSimulator { url ->
+//                        coroutineScope.launch {
+//                            exampleApiRepo.makeRequest(url)
+//                        }
+//                    }
 
-                        OutlinedTextField(
-                            value = exampleAPIUrl,
-                            onValueChange = { exampleAPIUrl = it }
-                        )
-
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    exampleApiRepo.makeRequest(exampleAPIUrl)
-                                }
-                            }
-                        ) {
-                            Text(text = "Send Request")
+                    RichRequestSimulator(mockedAPIs) { url ->
+                        coroutineScope.launch {
+                            exampleApiRepo.makeRequest(url)
                         }
                     }
 
@@ -142,6 +131,92 @@ class MainActivity : ComponentActivity() {
                         AvailableMocks(
                             mockRepo = postmanRepo
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RichRequestSimulator(
+    mockedAPIs: List<MockedAPI>,
+    onSendRequest: (String) -> Unit
+) {
+    var selectedAPIUrl by remember { mutableStateOf("") }
+
+    // Input to allow us to test the interception
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .wrapContentSize()
+    ) {
+        Text(
+            text = "Request Simulator",
+            style = MaterialTheme.typography.h6
+        )
+
+        ExposedDropdownMenu(mockedAPIs) {
+            it.url?.let { url -> selectedAPIUrl = url }
+        }
+
+        Text(
+            modifier = Modifier.padding(vertical = 8.dp),
+            text = selectedAPIUrl,
+            style = MaterialTheme.typography.caption
+        )
+
+        Button(
+            onClick = { onSendRequest(selectedAPIUrl) }
+        ) {
+            Text(text = "Send Request")
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class) // ExposedDropdownMenuBox
+@Composable
+private fun ExposedDropdownMenu(
+    options: List<MockedAPI>,
+    onSelected: (MockedAPI) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selectedOption by remember { mutableStateOf("Select an option") }
+
+    Column {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = {
+                expanded = !expanded
+            }
+        ) {
+            OutlinedTextField(
+                value = selectedOption,
+                onValueChange = { },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .exposedDropdownSize(true),
+                label = { Text("Options") },
+                readOnly = true,
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(
+                        expanded = expanded
+                    )
+                },
+                colors = ExposedDropdownMenuDefaults.textFieldColors()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(onClick = {
+                        selectedOption = option.name
+                        onSelected(option)
+                        expanded = false
+                    }) {
+                        Text(text = option.name)
                     }
                 }
             }

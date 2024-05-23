@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 typealias ApiName = String
 
+data class MockedAPI(val name: String, val url: String?)
+
 /**
  * PostmanMockRepo is responsible for storing the collection of available mocks, all mocks that are currently
  * enabled/active,
@@ -60,8 +62,8 @@ class PostmanMockRepo(
     /**
      *
      */
-    private val mutableFlattenedMockItems = MutableStateFlow<List<Postman.Item>>(emptyList())
-    val flattenedMockItems = mutableFlattenedMockItems.asStateFlow()
+    private val mutableMockedAPIs = MutableStateFlow<List<MockedAPI>>(emptyList())
+    val mockedAPIs = mutableMockedAPIs.asStateFlow()
 
     //==================================================================
     // Public methods
@@ -141,8 +143,15 @@ class PostmanMockRepo(
             val response = postmanClient.getCollection(collectionId)!!.collection
             mutableMockCollection.emit(response)
 
-            mutableFlattenedMockItems.emit(
-                flattenedItems(response.item).filter { !it.savedMocks.isNullOrEmpty() }
+            // Pull out the list of all APIs that have mocks along with their name; mostly used for our
+            // sample app to allow us to easily simulate all of the API calls.
+            mutableMockedAPIs.emit(
+                flattenedItems(response.item)
+                    .filter { !it.savedMocks.isNullOrEmpty() }
+                    .map {
+                        val url = it.savedMocks?.firstOrNull()?.originalRequest?.url?.fullPath
+                        MockedAPI(it.name, url)
+                    }
             )
 
             // Determine available groups from response
