@@ -116,9 +116,7 @@ class PostmanMockRepo(
         if (mockState == MockState.DISABLED) {
             return MockResponse.NoneAvailable(null)
         }
-
-        // Problem, need to remove the "base" urls from the requestUrlPaths before comparing?
-
+        
         return try {
             // Look up mock based on the URL path being requested.
             val mock = enabledMocks.value.firstNotNullOfOrNull { mock ->
