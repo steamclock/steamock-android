@@ -1,6 +1,7 @@
 package com.steamclock.steamock.lib.repo
 
 import android.util.Log
+import androidx.compose.ui.text.toLowerCase
 import com.steamclock.steamock.lib.ui.ContentLoadViewState
 import com.steamclock.steamock.lib.PostmanMockConfig
 import com.steamclock.steamock.lib.api.Postman
@@ -116,11 +117,13 @@ class PostmanMockRepo(
             return MockResponse.NoneAvailable(null)
         }
 
+        // Problem, need to remove the "base" urls from the requestUrlPaths before comparing?
+
         return try {
             // Look up mock based on the URL path being requested.
             val mock = enabledMocks.value.firstNotNullOfOrNull { mock ->
-                val mockEncodedPath = mock.value.originalRequest.url.fullPath
-                if (requestUrlPath.contains(mockEncodedPath, ignoreCase = true)) {
+                val mockEncodedPath = "/"+mock.value.originalRequest.url.fullPath
+                if (requestUrlPath.endsWith(mockEncodedPath, ignoreCase = true)) {
                     Log.v("MockingRequestInterceptor", "Found enabled mock: $mock")
                     mock.value
                 } else {
@@ -154,7 +157,7 @@ class PostmanMockRepo(
                 flattenedItems(response.item)
                     .filter { !it.savedMocks.isNullOrEmpty() }
                     .map {
-                        val url = it.savedMocks?.firstOrNull()?.originalRequest?.url?.fullPath
+                        val url = it.savedMocks?.firstOrNull()?.originalRequest?.url?.raw
                         MockedAPI(it.name, url)
                     }
             )
