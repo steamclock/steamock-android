@@ -11,7 +11,7 @@ import okhttp3.executeAsync
  * eventually mocking) data
  */
 class PostmanAPIClient(
-    private val config: PostmanMockConfig
+    private var config: PostmanMockConfig
 ) {
     private val json = Json{
         isLenient = true
@@ -28,6 +28,7 @@ class PostmanAPIClient(
     private val postmanAPIBaseUrl = "https://api.getpostman.com"
     private val postmanAPICollectionPath = "collections"
 
+    @Throws(Exception::class)
     suspend fun getCollection(collectionId: String): Postman.CollectionResponse? {
         val collectionUrl = "$postmanAPIBaseUrl/$postmanAPICollectionPath/$collectionId"
         val request = Request.Builder()
@@ -38,17 +39,25 @@ class PostmanAPIClient(
         val response = client.newCall(request).executeAsync()
         return if (response.isSuccessful) {
             val responseBody = response.body.string()
-            try {
-                json.decodeFromString<Postman.CollectionResponse>(responseBody)
-            } catch (e: Exception) {
-                // todo Handle the error response
-                println("Error:  ${e.message}")
-                null
-            }
+            // Don't catch exceptions here, let them bubble up
+            json.decodeFromString<Postman.CollectionResponse>(responseBody)
         } else {
-            // todo Handle the error response
-            println("Error: ${response.code} - ${response.message}")
-            null
+            when(response.code) {
+                401 -> throw(PostmanAPIKeyException())
+                else -> throw(Exception("Error: ${response.code} - ${response.message}"))
+            }
         }
     }
+
+    /**
+     * It is possible that the Postman access key will become invalidated if not used for a period of
+     * time. This method allows us to update the key in the client without having to rebuild the app.
+     * todo: We may want to store this in encrypted storage in the future so that we'd only need to set
+     *   it once per install
+     */
+    fun updatePostmanAccessKey(newKey: String) {
+        config = config.copy(postmanAccessKey = newKey)
+    }
 }
+
+class PostmanAPIKeyException : Exception("Error: Unauthorized - Check your Postman API key")

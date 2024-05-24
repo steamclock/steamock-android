@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.steamclock.steamock.lib.repo.PostmanMockRepo
 import com.steamclock.steamock.lib.api.Postman
+import com.steamclock.steamock.lib.api.PostmanAPIKeyException
 import com.steamclock.steamock.lib.repo.ApiName
 import kotlinx.coroutines.launch
 
@@ -38,47 +40,81 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun AvailableMocks(
+    modifier: Modifier = Modifier,
     mockRepo: PostmanMockRepo
 ) {
+    val mockCollectionState by mockRepo.mockCollectionState.collectAsState()
     val mockCollection by mockRepo.mockCollection.collectAsState()
     val enabledMocks by mockRepo.enabledMocks.collectAsState()
     val mockingGroups by mockRepo.mockGroups.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var selectedGroupName by remember { mutableStateOf<String?>(null) }
 
-    mockCollection?.let { collection ->
-        AvailableMocks(
-            collection = collection,
-            enabledMocks = enabledMocks,
-            mockResponseDelayMs = mockRepo.mockResponseDelayMs,
-            onUpdateMockDelayMs = { mockRepo.mockResponseDelayMs = it }, // todo Flow?
-            onAllMocksCleared = {
-                coroutineScope.launch {
-                    mockRepo.clearAllMocks()
-                }
-            },
-            onMockChanged = { apiId, mock ->
-                coroutineScope.launch {
-                    if (mock != null) {
-                        mockRepo.enableMock(apiId, mock)
-                    } else {
-                        mockRepo.disableMock(apiId)
-                    }
-                }
-            },
+    LaunchedEffect(Unit) {
+        mockRepo.requestCollectionUpdate()
+    }
 
-            // Support for mocking "groups"
-            availableGroups = mockingGroups,
-            selectedGroupName = selectedGroupName,
-            onMockGroupSelected = { name ->
-                selectedGroupName = name
-                name?.let {
-                    coroutineScope.launch {
-                        mockRepo.enableAllMocksForGroup(name)
+    Column {
+        when (val state = mockCollectionState) {
+            is ContentLoadViewState.Loading -> {
+                Text(modifier = Modifier.padding(16.dp), text = "Fetching available Postman mocks...")
+            }
+            is ContentLoadViewState.Error -> {
+                when (state.throwable) {
+                    is PostmanAPIKeyException -> {
+                        // Postman API key has expired; allow manual entry of a new one until a new
+                        // build can be made.
+                        PostmanAPIKeyInput { newKey ->
+                            mockRepo.updatePostmanAccessKey(newKey)
+                            coroutineScope.launch { mockRepo.requestCollectionUpdate() }
+                        }
+                    }
+                    else -> {
+                        Text(
+                            modifier = Modifier.padding(16.dp),
+                            text = state.throwable.message ?: "Error fetching Postman Collection"
+                        )
                     }
                 }
             }
-        )
+            is ContentLoadViewState.Success -> {
+                mockCollection?.let { collection ->
+                    AvailableMocks(
+                        modifier = modifier,
+                        collection = collection,
+                        enabledMocks = enabledMocks,
+                        mockResponseDelayMs = mockRepo.mockResponseDelayMs,
+                        onUpdateMockDelayMs = { mockRepo.mockResponseDelayMs = it }, // todo Flow?
+                        onAllMocksCleared = {
+                            coroutineScope.launch {
+                                mockRepo.clearAllMocks()
+                            }
+                        },
+                        onMockChanged = { apiId, mock ->
+                            coroutineScope.launch {
+                                if (mock != null) {
+                                    mockRepo.enableMock(apiId, mock)
+                                } else {
+                                    mockRepo.disableMock(apiId)
+                                }
+                            }
+                        },
+
+                        // Support for mocking "groups"
+                        availableGroups = mockingGroups,
+                        selectedGroupName = selectedGroupName,
+                        onMockGroupSelected = { name ->
+                            selectedGroupName = name
+                            name?.let {
+                                coroutineScope.launch {
+                                    mockRepo.enableAllMocksForGroup(name)
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -138,7 +174,7 @@ private fun MocksForApi(
                     if (checked) {
                         onMockSelected(mock)
                     } else {
-                        onMockDeselected
+                        onMockDeselected()
                     }
                 }
             )
@@ -166,7 +202,6 @@ private fun PostmanItem(
 
             // Else show all the mocks available for the given API
             val enabledMock = enabledMocks?.get(item.name)
-            Divider(startIndent = startOffset)
             Spacer(modifier = Modifier.height(8.dp))
             MocksForApi(
                 modifier = Modifier.padding(start = startOffset),
@@ -180,7 +215,6 @@ private fun PostmanItem(
         is Postman.TypedItem.Folder -> {
             // We have a folder of possible items, show the older name and then iterate
             // through all items in the folder.
-            Divider(startIndent = startOffset)
             Text(
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
                 text = typed.name,
@@ -203,6 +237,7 @@ private fun PostmanItem(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AvailableMocks(
+    modifier: Modifier,
     collection: Postman.Collection,
     enabledMocks: Map<ApiName, Postman.SavedMock>?,
     mockResponseDelayMs: Int,
@@ -214,26 +249,26 @@ private fun AvailableMocks(
     selectedGroupName: String?,
     onMockGroupSelected: (String?) -> Unit // GroupName
 ) {
-    var delay by rememberSaveable { mutableStateOf(mockResponseDelayMs) }
+    var delay by rememberSaveable { mutableIntStateOf(mockResponseDelayMs) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(16.dp)
-            .scrollable(rememberScrollState(), orientation = Orientation.Vertical)
+            .verticalScroll(rememberScrollState())
     ) {
         //---------------------------------------------------------------
         // Collection name
         //---------------------------------------------------------------
         Text(
-            text = collection.info.name,
+            text = "Mocks available for ${collection.info.name}",
             style = MaterialTheme.typography.h6
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Currently enabled: ${enabledMocks?.size ?: 0}")
 
-        // todo left off scroll up and down aren't working?
+        Spacer(modifier = Modifier.height(8.dp))
 
         //---------------------------------------------------------------
         // Global actions
@@ -243,7 +278,7 @@ private fun AvailableMocks(
             onDelayUpdated = { delay = it },
             onDelayDone = {
                 onUpdateMockDelayMs(delay)
-                //keyboardController?.hide()
+                keyboardController?.hide()
                 focusManager.clearFocus()
             },
             availableGroups = availableGroups,
@@ -253,7 +288,6 @@ private fun AvailableMocks(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-        Divider()
 
         //---------------------------------------------------------------
         // APIs in collection
@@ -267,8 +301,6 @@ private fun AvailableMocks(
                     onMockChanged = onMockChanged
                 )
             }
-            // Final bottom divider
-            Divider()
         }
     }
 }
@@ -283,6 +315,7 @@ private fun GlobalActions(
     onGroupSelected: (String?) -> Unit,
     onAllMocksCleared: () -> Unit
 ) {
+    val delayStr = if (delay == 0) { "" } else { delay.toString() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -290,7 +323,7 @@ private fun GlobalActions(
     ) {
         TextField(
             modifier = Modifier.weight(1f),
-            value = delay.toString(),
+            value = delayStr,
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 imeAction = ImeAction.Done,
@@ -302,7 +335,7 @@ private fun GlobalActions(
                 }
             ),
             onValueChange = {
-                val result = it.replaceFirst("^0+(?!$)", "")
+                val result = it.replace(Regex("[^0-9]"), "")
                 val delay = if (result.isBlank()) { 0 } else { result.toInt() }
                 onDelayUpdated(delay)
             },
@@ -432,7 +465,33 @@ fun AvailableMock(
     }
 }
 
+@Composable
+fun PostmanAPIKeyInput(
+    onNewAPIKey: (String) -> Unit
+) {
+    var apiKey by remember { mutableStateOf("") }
 
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = "Postman API Key is no longer valid; please enter a new one."
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = apiKey, onValueChange = { apiKey = it }
+        )
+
+        Button(onClick = { onNewAPIKey(apiKey) }) {
+            Text(text = "Save")
+        }
+    }
+
+
+}
+
+// ========================================================================
+// Previews
+// ========================================================================
 @Composable
 @Preview(widthDp = 400, showBackground = true, backgroundColor = 0xFFFFFFFF)
 fun GlobalActionsPreview() {

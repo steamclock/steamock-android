@@ -1,6 +1,7 @@
 package com.steamclock.steamock.lib.repo
 
 import android.util.Log
+import androidx.compose.ui.text.toLowerCase
 import com.steamclock.steamock.lib.ui.ContentLoadViewState
 import com.steamclock.steamock.lib.PostmanMockConfig
 import com.steamclock.steamock.lib.api.Postman
@@ -16,6 +17,12 @@ import kotlinx.coroutines.flow.asStateFlow
 typealias ApiName = String
 
 /**
+ * Small data class that associates a mocked API (endpoint) name in Postman with it's URL.
+ * This is mostly used for the sample app to allow us to easily simulate all of the API calls.
+ */
+data class MockedAPI(val name: ApiName, val url: String?)
+
+/**
  * PostmanMockRepo is responsible for storing the collection of available mocks, all mocks that are currently
  * enabled/active,
  */
@@ -27,6 +34,9 @@ class PostmanMockRepo(
     var mockResponseDelayMs = 0
 
     private val postmanClient = PostmanAPIClient(config)
+    fun updatePostmanAccessKey(newKey: String) {
+        postmanClient.updatePostmanAccessKey(newKey)
+    }
 
     /**
      * Load state for list of all mocks available on Postman.
@@ -35,10 +45,17 @@ class PostmanMockRepo(
     val mockCollectionState = mutableMockCollectionState.asStateFlow()
 
     /**
-     * The postman collection (which contains a list of all available Postman mocks)
+     * The full postman collection, which contains a list of all available Postman mocks
      */
     private val mutableMockCollection = MutableStateFlow<Postman.Collection?>(null)
     val mockCollection = mutableMockCollection.asStateFlow()
+
+    /**
+     * List of all APIs/Endpoints that have mocks; mostly used for our sample app to allow us to easily simulate
+     * all of the API calls.
+     */
+    private val mutableMockedAPIs = MutableStateFlow<List<MockedAPI>>(emptyList())
+    val mockedAPIs = mutableMockedAPIs.asStateFlow()
 
     /**
      * List of all groups found in the Postman collection.
@@ -62,7 +79,7 @@ class PostmanMockRepo(
     }
 
     suspend fun enableMock(apiName: ApiName, mock: Postman.SavedMock) {
-        val mocks = mutableEnabledMocks.value?.toMutableMap() ?: mutableMapOf() // Create a new mutable map based on the existing value
+        val mocks = mutableEnabledMocks.value.toMutableMap() // Create a new mutable map based on the existing value
         mocks[apiName] = mock
         mutableEnabledMocks.emit(mocks)
     }
@@ -99,12 +116,12 @@ class PostmanMockRepo(
         if (mockState == MockState.DISABLED) {
             return MockResponse.NoneAvailable(null)
         }
-
+        
         return try {
             // Look up mock based on the URL path being requested.
             val mock = enabledMocks.value.firstNotNullOfOrNull { mock ->
-                val mockEncodedPath = mock.value.originalRequest.url.fullPath
-                if (requestUrlPath.contains(mockEncodedPath, ignoreCase = true)) {
+                val mockEncodedPath = "/"+mock.value.originalRequest.url.fullPath
+                if (requestUrlPath.endsWith(mockEncodedPath, ignoreCase = true)) {
                     Log.v("MockingRequestInterceptor", "Found enabled mock: $mock")
                     mock.value
                 } else {
@@ -131,6 +148,17 @@ class PostmanMockRepo(
         try {
             val response = postmanClient.getCollection(collectionId)!!.collection
             mutableMockCollection.emit(response)
+
+            // Pull out the list of all APIs that have mocks along with their name; mostly used for our
+            // sample app to allow us to easily simulate all of the API calls.
+            mutableMockedAPIs.emit(
+                flattenedItems(response.item)
+                    .filter { !it.savedMocks.isNullOrEmpty() }
+                    .map {
+                        val url = it.savedMocks?.firstOrNull()?.originalRequest?.url?.raw
+                        MockedAPI(it.name, url)
+                    }
+            )
 
             // Determine available groups from response
             mutableMockGroups.emit(findMockingGroups(response))
@@ -168,16 +196,16 @@ class PostmanMockRepo(
                 mock.originalRequest.url.getQueryValueFor("group")?.let { group ->
                     groupNames.add(group)
                 }
-                Log.v("shayla", mock.originalRequest.url.query.toString())
             }
         }
 
-        Log.v("shayla", flattenedItems.size.toString())
         return groupNames.toSet()
     }
 
     /**
      * Returns the URL we need to use to request the given PostmanMock.
+     * This will be built from the mockServerUrl and the path/query parameters of the original request
+     * for the selected mock.
      */
     private fun getMockedUrl(mock: Postman.SavedMock): String {
         return StringBuilder().apply {
